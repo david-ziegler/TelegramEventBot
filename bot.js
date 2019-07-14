@@ -26,15 +26,6 @@ bot.on("message", msg => {
     });
   }
 });
-bot.on("message", msg => {
-  bot.sendMessage(
-    msg.chat.id,
-    "🌞 *Willkommen beim Rainbow Circle!*\n\nSingkreise etc. im Park.\n\nRegeln für die Telegram-Gruppe:\nDa sehr viele Menschen in dieser Gruppe sind, schreibe nur eine Nachricht wenn es folgendes ist:\n- eine Einladung zum Singkreis oder ähnlichem Treffen mit Ort & Zeit\n- Zusagen (keine Absagen)\n- Doodle-Link zur Termin-Findung.\n\nDas hier ist nur die automatische Willkommensnachricht. Wenn du etwas fragen willst, schreibe an David (@david\\_ziegler) oder rufe an: 0156776801234.\n\nSchön, dass du dabei bist! Ich freu mich auf tolle gemeinsame Momente 😊",
-    {
-      parse_mode: "markdown"
-    }
-  );
-});
 
 // const rk = new Keyboard.ReplyKeyboard();
 // const ik = new Keyboard.InlineKeyboard();
