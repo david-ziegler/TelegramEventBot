@@ -24,7 +24,7 @@ rk.addRow("➕ Neues Event erstellen");
 ik.addRow({ text: "👍 Zusagen", callback_data: "Works!" });
 bot.onText(/\/start/i, msg => {
   bot.sendMessage(
-    msg.from.id,
+    msg.chat.id,
     "Started Events Bot",
     rk.open({ resize_keyboard: true })
   );
@@ -35,8 +35,23 @@ bot.onText(/\/message/i, msg => {
   bot.sendMessage(msg.chat.id, "Hallo");
 });
 
+bot.on("message", msg => {
+  console.log("triggered event ", msg);
+  const newChatMembers = msg.new_chat_members;
+  if (newChatMembers) {
+    newChatMembers.forEach(newChatMember => {
+      console.log("new chat member:", newChatMember);
+      bot.sendMessage(newChatMember.id, "Willkommen in der Gruppe");
+    });
+  }
+});
+
 bot.onText(/\/event/i, msg => {
-  bot.sendMessage(msg.from.id, msg.text.replace("/event ", ""), ik.build());
+  bot.sendMessage(
+    msg.chat.id,
+    "Event: " + msg.text.replace("/event ", ""),
+    ik.build()
+  );
 });
 
 module.exports = bot;
