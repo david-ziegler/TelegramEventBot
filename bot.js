@@ -31,8 +31,7 @@ bot.onText(/\/start/i, msg => {
 });
 
 bot.onText(/\/event/i, msg => {
-  console.log("msg", msg.text);
-  bot.sendMessage(msg.from.id, "sent text:" + msg.text, ik.build());
+  bot.sendMessage(msg.from.id, msg.text.replace("/event ", ""), ik.build());
 });
 
 module.exports = bot;
