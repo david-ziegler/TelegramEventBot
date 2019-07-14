@@ -1,7 +1,6 @@
-const token = process.env.TOKEN;
-
 const Bot = require("node-telegram-bot-api");
-const Keyboard = require("node-telegram-keyboard-wrapper");
+// const Keyboard = require("node-telegram-keyboard-wrapper");
+const token = process.env.TOKEN;
 let bot;
 
 if (process.env.NODE_ENV === "production") {
@@ -13,45 +12,39 @@ if (process.env.NODE_ENV === "production") {
 
 console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
-// bot.on("message", msg => {
-//   const name = msg.from.first_name;
-//   bot.sendMessage(msg.chat.id, "Create Events 7").then(() => {});
-// });
-
-const rk = new Keyboard.ReplyKeyboard();
-const ik = new Keyboard.InlineKeyboard();
-rk.addRow("➕ Neues Event erstellen");
-ik.addRow({ text: "👍 Zusagen", callback_data: "Works!" });
-bot.onText(/\/start/i, msg => {
-  bot.sendMessage(
-    msg.chat.id,
-    "Started Events Bot",
-    rk.open({ resize_keyboard: true })
-  );
-});
-
-bot.onText(/\/message/i, msg => {
-  console.log("msg", msg);
-  bot.sendMessage(msg.chat.id, "Hallo");
-});
-
 bot.on("message", msg => {
-  console.log("triggered event ", msg);
   const newChatMembers = msg.new_chat_members;
   if (newChatMembers) {
     newChatMembers.forEach(newChatMember => {
-      console.log("new chat member:", newChatMember);
-      bot.sendMessage(newChatMember.id, "Willkommen in der Gruppe");
+      bot.sendMessage(
+        newChatMember.id,
+        "🌞 *Willkommen beim Rainbow Circle!*\n\nSingkreise etc. im Park.\n\nRegeln für die Telegram-Gruppe:\nDa sehr viele Menschen in dieser Gruppe sind, schreibe nur eine Nachricht wenn es folgendes ist:\n- eine Einladung zum Singkreis oder ähnlichem Treffen mit Ort & Zeit\n- Zusagen (keine Absagen)\n- Doodle-Link zur Termin-Findung.\n\nBei Fragen oder sonstigem, ruf mich an oder schreibe mir: 0156776801234, @david\\_ziegler",
+        {
+          parse_mode: "markdown"
+        }
+      );
     });
   }
 });
 
-bot.onText(/\/event/i, msg => {
-  bot.sendMessage(
-    msg.chat.id,
-    "Event: " + msg.text.replace("/event ", ""),
-    ik.build()
-  );
-});
+// const rk = new Keyboard.ReplyKeyboard();
+// const ik = new Keyboard.InlineKeyboard();
+// rk.addRow("➕ Neues Event erstellen");
+// ik.addRow({ text: "👍 Zusagen", callback_data: "Works!" });
+// bot.onText(/\/start/i, msg => {
+//   bot.sendMessage(
+//     msg.chat.id,
+//     "Started Events Bot",
+//     rk.open({ resize_keyboard: true })
+//   );
+// });
+
+// bot.onText(/\/event/i, msg => {
+//   bot.sendMessage(
+//     msg.chat.id,
+//     "Event: " + msg.text.replace("/event ", ""),
+//     ik.build()
+//   );
+// });
 
 module.exports = bot;
