@@ -30,6 +30,11 @@ bot.onText(/\/start/i, msg => {
   );
 });
 
+bot.onText(/\/message/i, msg => {
+  console.log("msg", msg);
+  bot.sendMessage(msg.chat.id, "Hallo");
+});
+
 bot.onText(/\/event/i, msg => {
   bot.sendMessage(msg.from.id, msg.text.replace("/event ", ""), ik.build());
 });
