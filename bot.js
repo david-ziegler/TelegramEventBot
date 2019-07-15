@@ -18,47 +18,45 @@ let events = {};
 let currentlyCreatingEventID = null;
 
 // Show "Add Event"-Button
-const rk = new Keyboard.ReplyKeyboard();
-const ik = new Keyboard.InlineKeyboard();
-rk.addRow("➕ Neues Event erstellen");
-ik.addRow({ text: "👍 Zusagen", callback_data: ACTIONS.RSVP });
 bot.onText(/\/start/i, msg => {
+  const replyKeyboard = new Keyboard.ReplyKeyboard();
+  replyKeyboard.addRow("➕ Neues Event erstellen");
+  console.log("open reply keyboard");
   bot.sendMessage(
     msg.chat.id,
-    "Started Events Bot",
-    rk.open({ resize_keyboard: true })
+    "Ein Bot zum Erstellen von Events wurde hinzugefügt. Gib \\event ein, um ein neues Event zu erstellen oder drücke auf den entsprechenden Button unten.",
+    replyKeyboard.open({ resize_keyboard: true })
   );
 });
 
 // Trigger Create Event
-bot.onText(/➕ Neues Event erstellen/i, msg => {
-  bot.deleteMessage(msg.chat.id, msg.message_id);
-  bot
-    .sendMessage(
-      msg.chat.id,
-      "*Neues Event erstellen*\nGib eine Beschreibung mit Ort & Zeit ein und sende dann die Nachricht ab um das Event zu erstellen.",
-      { parse_mode: "markdown" }
-    )
-    .then(createdMsg => {
-      currentlyCreatingEventID = createEventIDFromMessage(createdMsg);
-      console.log(
-        "CurrentlyCreatingID, createdMsg",
-        currentlyCreatingEventID
-        // createdMsg
-      );
-    });
+bot.onText(/(➕ Neues Event erstellen|\/event)/, msg => {
+  if (!currentlyCreatingEventID) {
+    bot.deleteMessage(msg.chat.id, msg.message_id);
+    bot
+      .sendMessage(
+        msg.chat.id,
+        "*Neues Event erstellen*\nGib eine Beschreibung mit Ort & Zeit ein und sende dann die Nachricht ab um das Event zu erstellen.",
+        { parse_mode: "markdown" }
+      )
+      .then(createdMsg => {
+        currentlyCreatingEventID = createEventIDFromMessage(createdMsg);
+      });
+  }
 });
 
 // Create Event
 bot.on("message", msg => {
   if (currentlyCreatingEventID && msg.text !== "➕ Neues Event erstellen") {
     bot.deleteMessage(msg.chat.id, msg.message_id);
+    const inlineKeyboard = new Keyboard.InlineKeyboard();
+    inlineKeyboard.addRow({ text: "👍  zusagen", callback_data: ACTIONS.RSVP });
     bot
       .editMessageText(msg.text, {
         chat_id: getChatIDFromEventID(currentlyCreatingEventID),
         message_id: getMessageIDFromEventID(currentlyCreatingEventID),
         parse_mode: "markdown",
-        ...ik.build()
+        ...inlineKeyboard.build()
       })
       .then(createdMsg => {
         const eventID = currentlyCreatingEventID;
@@ -66,10 +64,6 @@ bot.on("message", msg => {
           text: createdMsg.text,
           attendees: []
         };
-        // bot.editMessageReplyMarkup(ik.build(), {
-        //   chat_id: getChatIDFromEventID(currentlyCreatingEventID),
-        //   message_id: getMessageIDFromEventID(currentlyCreatingEventID)
-        // });
         currentlyCreatingEventID = null;
       });
   }
@@ -90,7 +84,6 @@ bot.on("callback_query", query => {
         parse_mode: "markdown"
       });
     });
-  s;
 });
 
 function getFullNameString(user) {
