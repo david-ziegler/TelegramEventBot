@@ -15,6 +15,7 @@ if (process.env.NODE_ENV === "production") {
 console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
 let events = {};
+let currentlyCreatingEventID = null;
 
 // Show "Add Event"-Button
 const rk = new Keyboard.ReplyKeyboard();
@@ -29,43 +30,96 @@ bot.onText(/\/start/i, msg => {
   );
 });
 
+// Trigger Create Event
+bot.onText(/➕ Neues Event erstellen/i, msg => {
+  bot.deleteMessage(msg.chat.id, msg.message_id);
+  bot
+    .sendMessage(
+      msg.chat.id,
+      "*Neues Event erstellen*\nGib eine Beschreibung mit Ort & Zeit ein und sende dann die Nachricht ab um das Event zu erstellen.",
+      { parse_mode: "markdown" }
+    )
+    .then(createdMsg => {
+      currentlyCreatingEventID = createEventIDFromMessage(createdMsg);
+      console.log(
+        "CurrentlyCreatingID, createdMsg",
+        currentlyCreatingEventID
+        // createdMsg
+      );
+    });
+});
+
 // Create Event
-bot.onText(/\/event/i, msg => {
-  bot.sendMessage(
-    msg.chat.id,
-    "Event: " + msg.text.replace("/event ", ""),
-    ik.build()
-  );
+bot.on("message", msg => {
+  if (currentlyCreatingEventID && msg.text !== "➕ Neues Event erstellen") {
+    bot.deleteMessage(msg.chat.id, msg.message_id);
+    bot
+      .editMessageText(msg.text, {
+        chat_id: getChatIDFromEventID(currentlyCreatingEventID),
+        message_id: getMessageIDFromEventID(currentlyCreatingEventID),
+        parse_mode: "markdown",
+        ...ik.build()
+      })
+      .then(createdMsg => {
+        const eventID = currentlyCreatingEventID;
+        events[eventID] = {
+          text: createdMsg.text,
+          attendees: []
+        };
+        // bot.editMessageReplyMarkup(ik.build(), {
+        //   chat_id: getChatIDFromEventID(currentlyCreatingEventID),
+        //   message_id: getMessageIDFromEventID(currentlyCreatingEventID)
+        // });
+        currentlyCreatingEventID = null;
+      });
+  }
 });
 
 // RSVP to Event
 bot.on("callback_query", query => {
-  const nameOfNewAttendee = `${query.from.first_name} ${
-    query.from.last_name
-  } (${getCleanMarkdownReadyUsername(query.from.username)})`;
-  const eventID = `${query.message.chat.id}-${query.message.message_id}`;
-  const attendees = events[eventID] ? attendees.concat() : [nameOfNewAttendee];
-  events[eventID] = {
-    attendees: attendees
-  };
-  const newText = `${query.message.text}\n\n*Zusagen:*${attendees.reduce(
-    (attendeesString, attendee) => `${attendeesString}\n${attendee}`,
-    ""
-  )}`;
+  const nameOfNewAttendee = getFullNameString(query.from);
+  const eventID = createEventIDFromMessage(query.message);
+  attendees = events[eventID].attendees.concat(nameOfNewAttendee);
+  events[eventID].attendees = attendees;
   bot
     .answerCallbackQuery(query.id, { text: "Action received!" })
     .then(function() {
-      console.log("query", query);
-      bot.editMessageText(newText, {
+      bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
         chat_id: query.message.chat.id,
         message_id: query.message.message_id,
         parse_mode: "markdown"
       });
     });
+  s;
 });
+
+function getFullNameString(user) {
+  return `${user.first_name} ${user.last_name} (${getCleanMarkdownReadyUsername(
+    user.username
+  )})`;
+}
+
+function createEventIDFromMessage(message) {
+  return `${message.chat.id}-${message.message_id}`;
+}
+
+function getChatIDFromEventID(eventID) {
+  return eventID.split("-")[0];
+}
+
+function getMessageIDFromEventID(eventID) {
+  return eventID.split("-")[1];
+}
 
 function getCleanMarkdownReadyUsername(username) {
   return `@${username.replace(/_/g, "\\_")}`;
+}
+
+function getEventTextWithAttendees(event) {
+  return `${event.text}\n\n*Zusagen:*${event.attendees.reduce(
+    (attendeesString, attendee) => `${attendeesString}\n${attendee}`,
+    ""
+  )}`;
 }
 
 module.exports = bot;
