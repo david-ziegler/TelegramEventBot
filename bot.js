@@ -40,25 +40,32 @@ bot.onText(/\/event/i, msg => {
 
 // RSVP to Event
 bot.on("callback_query", query => {
-  const newText = `${query.message.text}\n\n${query.from.first_name} ${
+  const nameOfNewAttendee = `${query.from.first_name} ${
     query.from.last_name
-  } (${query.from.username})`;
-  console.log(
-    "editMessage:",
-    query.message.text,
-    query.from.first_name,
-    query.message.message_id,
-    newText
-  );
+  } (${getCleanMarkdownReadyUsername(query.from.username)})`;
+  const eventID = `${query.message.chat.id}-${query.message.message_id}`;
+  const attendees = events[eventID] ? attendees.concat() : [nameOfNewAttendee];
+  events[eventID] = {
+    attendees: attendees
+  };
+  const newText = `${query.message.text}\n\n*Zusagen:*${attendees.reduce(
+    (attendeesString, attendee) => `${attendeesString}\n${attendee}`,
+    ""
+  )}`;
   bot
     .answerCallbackQuery(query.id, { text: "Action received!" })
     .then(function() {
       console.log("query", query);
       bot.editMessageText(newText, {
         chat_id: query.message.chat.id,
-        message_id: query.message.message_id
+        message_id: query.message.message_id,
+        parse_mode: "markdown"
       });
     });
 });
+
+function getCleanMarkdownReadyUsername(username) {
+  return `@${username.replace(/_/g, "\\_")}`;
+}
 
 module.exports = bot;
