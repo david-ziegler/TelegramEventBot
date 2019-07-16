@@ -66,19 +66,37 @@ function deleteMessage(msg) {
 
 // RSVP to Event
 bot.on("callback_query", query => {
-  const nameOfNewAttendee = getFullNameString(query.from);
   const eventID = createEventIDFromMessage(query.message);
-  attendees = events[eventID].attendees.concat(nameOfNewAttendee);
-  events[eventID].attendees = attendees;
-  bot.answerCallbackQuery(query.id, { text: "" }).then(function() {
-    bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
-      chat_id: query.message.chat.id,
-      message_id: query.message.message_id,
-      parse_mode: "markdown",
-      ...rsvpButton.build()
+  const attendeeUser = query.from;
+  if (!rsvpedAlready(eventID, attendeeUser)) {
+    events[eventID].attendees = getNewAttendeeList(
+      events[eventID].attendees,
+      attendeeUser
+    );
+    bot.answerCallbackQuery(query.id, { text: "" }).then(function() {
+      bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
+        chat_id: query.message.chat.id,
+        message_id: query.message.message_id,
+        parse_mode: "markdown",
+        ...rsvpButton.build()
+      });
     });
-  });
+  }
 });
+
+function rsvpedAlready(eventID, user) {
+  const nameOfNewAttendee = getFullNameString(user);
+  return events[eventID].attendees.includes(nameOfNewAttendee);
+}
+
+function getNewAttendeeList(originalAttendees, attendeeUser) {
+  const nameOfNewAttendee = getFullNameString(attendeeUser);
+  if (originalAttendees.includes(nameOfNewAttendee)) {
+    return originalAttendees;
+  } else {
+    return originalAttendees.concat(nameOfNewAttendee);
+  }
+}
 
 function getFullNameString(user) {
   return [user.first_name, user.last_name]
