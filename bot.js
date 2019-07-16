@@ -2,7 +2,8 @@ const Bot = require("node-telegram-bot-api");
 const Keyboard = require("node-telegram-keyboard-wrapper");
 const token = process.env.TOKEN;
 const ACTIONS = {
-  RSVP: "RSVP"
+  ACCEPT: "ACCEPT",
+  DECLINE: "DECLINE"
 };
 
 let bot;
@@ -16,8 +17,15 @@ console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
 let events = {};
 
-const rsvpButtons = new Keyboard.InlineKeyboard();
-rsvpButtons.addRow({ text: "👍  zusagen", callback_data: ACTIONS.RSVP });
+const acceptDeclineButtons = new Keyboard.InlineKeyboard();
+acceptDeclineButtons.addRow({
+  text: "👍 zusagen",
+  callback_data: ACTIONS.ACCEPT
+});
+acceptDeclineButtons.addRow({
+  text: "🚫 absagen",
+  callback_data: ACTIONS.DECLINE
+});
 
 bot.on("message", msg => {
   if (isEventText(msg.text)) {
@@ -28,7 +36,7 @@ bot.on("message", msg => {
 });
 
 function isEventText(text) {
-  return text.indexOf("/event") === 0;
+  return text.indexOf("/event") === 0 || text.indexOf("/Event") === 0;
 }
 
 function createEvent(msg) {
@@ -37,7 +45,7 @@ function createEvent(msg) {
   bot
     .sendMessage(msg.chat.id, eventDescription, {
       parse_mode: "markdown",
-      ...rsvpButton.build()
+      ...acceptDeclineButtons.build()
     })
     .then(createdMsg => {
       const eventID = createEventIDFromMessage(createdMsg);
@@ -49,45 +57,75 @@ function createEvent(msg) {
 }
 
 function removeBotCommand(text) {
-  return text.replace("/event ", "");
+  return text.replace("/event ", "").replace("/Event", "");
 }
 
 function deleteMessage(msg) {
   bot.deleteMessage(msg.chat.id, msg.message_id);
 }
 
-// RSVP to Event
+// ACCEPT to Event
 bot.on("callback_query", query => {
-  const eventID = createEventIDFromMessage(query.message);
-  const attendeeUser = query.from;
-  if (!rsvpedAlready(eventID, attendeeUser)) {
-    events[eventID].attendees = getNewAttendeeList(
+  if (query.data === ACTIONS.ACCEPT) {
+    acceptInvitation(query.from, query.message, query.id);
+  } else {
+    declineInvitation(query.from, query.message, query.id);
+  }
+});
+
+function acceptInvitation(acceptingUser, msg, queryID) {
+  const eventID = createEventIDFromMessage(msg);
+  if (!rsvpedAlready(eventID, acceptingUser)) {
+    events[eventID].attendees = getAttendeeListWithUserAdded(
       events[eventID].attendees,
-      attendeeUser
+      acceptingUser
     );
-    bot.answerCallbackQuery(query.id, { text: "" }).then(function() {
+    bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
       bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
-        chat_id: query.message.chat.id,
-        message_id: query.message.message_id,
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
         parse_mode: "markdown",
-        ...rsvpButton.build()
+        ...acceptDeclineButtons.build()
       });
     });
   }
-});
+}
+
+function declineInvitation(decliningUser, msg, queryID) {
+  const eventID = createEventIDFromMessage(msg);
+  if (rsvpedAlready(eventID, decliningUser)) {
+    removeUserFromAttendeeList(events[eventID].attendees, decliningUser);
+    bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
+      bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        parse_mode: "markdown",
+        ...acceptDeclineButtons.build()
+      });
+    });
+  }
+}
 
 function rsvpedAlready(eventID, user) {
   const nameOfNewAttendee = getFullNameString(user);
   return events[eventID].attendees.includes(nameOfNewAttendee);
 }
 
-function getNewAttendeeList(originalAttendees, attendeeUser) {
-  const nameOfNewAttendee = getFullNameString(attendeeUser);
+function getAttendeeListWithUserAdded(originalAttendees, user) {
+  const nameOfNewAttendee = getFullNameString(user);
   if (originalAttendees.includes(nameOfNewAttendee)) {
     return originalAttendees;
   } else {
     return originalAttendees.concat(nameOfNewAttendee);
   }
+}
+
+function removeUserFromAttendeeList(originalAttendees, user) {
+  const nameOfNewAttendee = getFullNameString(user);
+  if (originalAttendees.includes(nameOfNewAttendee)) {
+    originalAttendees.splice(originalAttendees.indexOf(nameOfNewAttendee), 1);
+  }
+  return;
 }
 
 function getFullNameString(user) {
