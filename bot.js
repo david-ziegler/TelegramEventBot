@@ -2,9 +2,7 @@ const Bot = require("node-telegram-bot-api");
 const Keyboard = require("node-telegram-keyboard-wrapper");
 const token = process.env.TOKEN;
 const ACTIONS = {
-  RSVP: "RSVP",
-  START_CREATING_EVENT: "START_CREATING_EVENT",
-  DONT_CREATE_EVENT: "DONT_CREATE_EVENT"
+  RSVP: "RSVP"
 };
 
 let bot;
@@ -18,14 +16,8 @@ console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
 let events = {};
 
-const rsvpButton = new Keyboard.InlineKeyboard();
-rsvpButton.addRow({ text: "👍  zusagen", callback_data: ACTIONS.RSVP });
-const yesNoButtons = new Keyboard.InlineKeyboard();
-yesNoButtons.addRow({
-  text: "ja",
-  callback_data: ACTIONS.START_CREATING_EVENT
-});
-yesNoButtons.addRow({ text: "nein", callback_data: ACTIONS.DONT_CREATE_EVENT });
+const rsvpButtons = new Keyboard.InlineKeyboard();
+rsvpButtons.addRow({ text: "👍  zusagen", callback_data: ACTIONS.RSVP });
 
 bot.on("message", msg => {
   if (isEventText(msg.text)) {
