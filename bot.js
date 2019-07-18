@@ -27,15 +27,9 @@ rsvpButtons.addRow({
   callback_data: ACTIONS.CANCEL_RSVP
 });
 
-bot.onText(/\/event .*/i, msg => {
-  if (isEventText(msg.text)) {
-    createEvent(msg);
-  }
+bot.onText(/\/(E|e)vent.*/, msg => {
+  createEvent(msg);
 });
-
-function isEventText(text) {
-  return text.indexOf("/event") === 0 || text.indexOf("/Event") === 0;
-}
 
 function createEvent(msg) {
   const eventDescription = removeBotCommand(msg.text);
