@@ -1,9 +1,9 @@
 const Bot = require("node-telegram-bot-api");
-const Keyboard = require("node-telegram-keyboard-wrapper");
+const { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const token = process.env.TOKEN;
 const ACTIONS = {
-  ACCEPT: "ACCEPT",
-  DECLINE: "DECLINE"
+  RSVP: "RSVP",
+  CANCEL_RSVP: "CANCEL_RSVP"
 };
 
 let bot;
@@ -17,21 +17,19 @@ console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
 let events = {};
 
-const acceptDeclineButtons = new Keyboard.InlineKeyboard();
-acceptDeclineButtons.addRow({
-  text: "👍 zusagen",
-  callback_data: ACTIONS.ACCEPT
+const rsvpButtons = new InlineKeyboard();
+rsvpButtons.addRow({
+  text: "👍    zusagen",
+  callback_data: ACTIONS.RSVP
 });
-acceptDeclineButtons.addRow({
-  text: "🚫 absagen",
-  callback_data: ACTIONS.DECLINE
+rsvpButtons.addRow({
+  text: "🚫  doch nicht",
+  callback_data: ACTIONS.CANCEL_RSVP
 });
 
-bot.on("message", msg => {
+bot.onText(/\/event .*/i, msg => {
   if (isEventText(msg.text)) {
     createEvent(msg);
-  } else {
-    deleteMessage(msg);
   }
 });
 
@@ -45,7 +43,7 @@ function createEvent(msg) {
   bot
     .sendMessage(msg.chat.id, eventDescription, {
       parse_mode: "markdown",
-      ...acceptDeclineButtons.build()
+      ...rsvpButtons.build()
     })
     .then(createdMsg => {
       const eventID = createEventIDFromMessage(createdMsg);
@@ -64,43 +62,43 @@ function deleteMessage(msg) {
   bot.deleteMessage(msg.chat.id, msg.message_id);
 }
 
-// ACCEPT to Event
+// RSVP to Event
 bot.on("callback_query", query => {
-  if (query.data === ACTIONS.ACCEPT) {
-    acceptInvitation(query.from, query.message, query.id);
+  if (query.data === ACTIONS.RSVP) {
+    rsvpToEvent(query.from, query.message, query.id);
   } else {
-    declineInvitation(query.from, query.message, query.id);
+    cancelRsvp(query.from, query.message, query.id);
   }
 });
 
-function acceptInvitation(acceptingUser, msg, queryID) {
+function rsvpToEvent(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
-  if (!rsvpedAlready(eventID, acceptingUser)) {
+  if (!rsvpedAlready(eventID, user)) {
     events[eventID].attendees = getAttendeeListWithUserAdded(
       events[eventID].attendees,
-      acceptingUser
+      user
     );
     bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
       bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         parse_mode: "markdown",
-        ...acceptDeclineButtons.build()
+        ...rsvpButtons.build()
       });
     });
   }
 }
 
-function declineInvitation(decliningUser, msg, queryID) {
+function cancelRsvp(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
-  if (rsvpedAlready(eventID, decliningUser)) {
-    removeUserFromAttendeeList(events[eventID].attendees, decliningUser);
+  if (rsvpedAlready(eventID, user)) {
+    removeUserFromAttendeeList(events[eventID].attendees, user);
     bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
       bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         parse_mode: "markdown",
-        ...acceptDeclineButtons.build()
+        ...rsvpButtons.build()
       });
     });
   }
