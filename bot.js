@@ -32,6 +32,14 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
+bot.on("callback_query", query => {
+  if (query.data === ACTIONS.RSVP) {
+    rsvpToEvent(query.from, query.message, query.id);
+  } else {
+    cancelRsvp(query.from, query.message, query.id);
+  }
+});
+
 function createEvent(msg) {
   const eventDescription = removeBotCommand(msg.text);
   deleteMessage(msg);
@@ -56,15 +64,6 @@ function removeBotCommand(text) {
 function deleteMessage(msg) {
   bot.deleteMessage(msg.chat.id, msg.message_id);
 }
-
-// RSVP to Event
-bot.on("callback_query", query => {
-  if (query.data === ACTIONS.RSVP) {
-    rsvpToEvent(query.from, query.message, query.id);
-  } else {
-    cancelRsvp(query.from, query.message, query.id);
-  }
-});
 
 function rsvpToEvent(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
