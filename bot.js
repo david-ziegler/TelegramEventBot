@@ -1,6 +1,5 @@
 const Bot = require("node-telegram-bot-api");
 const { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
-const token = process.env.TOKEN;
 const ACTIONS = {
   RSVP: "RSVP",
   CANCEL_RSVP: "CANCEL_RSVP"
@@ -8,10 +7,12 @@ const ACTIONS = {
 
 let bot;
 if (process.env.NODE_ENV === "production") {
-  bot = new Bot(token);
-  bot.setWebHook(process.env.HEROKU_URL + bot.token);
+  const prodBotToken = process.env.PROD_BOT_TOKEN;
+  bot = new Bot(prodBotToken);
+  bot.setWebHook(process.env.HEROKU_URL + prodBotToken);
 } else {
-  bot = new Bot(token, { polling: true });
+  const devBotToken = process.env.DEV_BOT_TOKEN;
+  bot = new Bot(devBotToken, { polling: true });
 }
 console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
