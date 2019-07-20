@@ -32,6 +32,10 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
+bot.onText(/^\/edit_event.*/, msg => {
+  editEvent(msg);
+});
+
 bot.on("callback_query", query => {
   if (query.data === ACTIONS.RSVP) {
     rsvpToEvent(query.from, query.message, query.id);
@@ -42,23 +46,32 @@ bot.on("callback_query", query => {
 
 function createEvent(msg) {
   const eventDescription = removeBotCommand(msg.text);
+  const eventDescriptionWithAuthor = addEventAuthor(eventDescription, msg.from);
   deleteMessage(msg);
   bot
-    .sendMessage(msg.chat.id, eventDescription, {
+    .sendMessage(msg.chat.id, eventDescriptionWithAuthor, {
       parse_mode: "markdown",
       ...rsvpButtons.build()
     })
     .then(createdMsg => {
       const eventID = createEventIDFromMessage(createdMsg);
       events[eventID] = {
-        text: eventDescription,
+        text: eventDescriptionWithAuthor,
         attendees: []
       };
     });
 }
 
 function removeBotCommand(text) {
-  return text.replace("/event ", "").replace("/Event", "");
+  return text
+    .replace("/event ", "")
+    .replace("/Event", "")
+    .replace("/edit_event", "");
+}
+
+function addEventAuthor(text, author) {
+  console.log("author", text, author);
+  return `${text}\n\n_Erstellt von ${getFullNameString(author)}_`;
 }
 
 function deleteMessage(msg) {
