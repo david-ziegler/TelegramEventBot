@@ -28,7 +28,7 @@ rsvpButtons.addRow({
   callback_data: ACTIONS.CANCEL_RSVP
 });
 
-bot.onText(/\/(E|e)vent.*/, msg => {
+bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
