@@ -80,6 +80,8 @@ function rsvpToEvent(user, msg, queryID) {
         ...rsvpButtons.build()
       });
     });
+  } else {
+    bot.answerCallbackQuery(queryID, { text: "" });
   }
 }
 
@@ -94,6 +96,10 @@ function cancelRsvp(user, msg, queryID) {
         parse_mode: "markdown",
         ...rsvpButtons.build()
       });
+    });
+  } else {
+    bot.answerCallbackQuery(queryID, {
+      text: ""
     });
   }
 }
