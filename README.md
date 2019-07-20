@@ -44,7 +44,8 @@ Troubleshooting: if `npm install` doesn't work you might want to try `sudo npm i
 
 1. Follow the steps under "Local development"
 2. Create a new bot with [BotFather](https://core.telegram.org/bots#3-how-do-i-create-a-bot) and grab your TOKEN.
-3. Rename .env_example file into .env and set TOKEN to the value, you've got from the BotFather.
+3. Rename `.env_example` file into `.env` and set `DEV_BOT_TOKEN` to the token, you've got from BotFather.
+   (You may also create two different bots and use one token for local development (`DEV_BOT_TOKEN`) and one for production (the deployed bot) (`PROD_BOT_TOKEN`)).
 
 ### Deploy your bot to the heroku server
 
@@ -52,12 +53,13 @@ Troubleshooting: if `npm install` doesn't work you might want to try `sudo npm i
 2. Login to your Heroku account using `heroku login` in the terminal.
 3. Go to the `createEventsBot` folder.
 4. Run `heroku create` to prepare the Heroku environment.
-5. Run `heroku config:set TOKEN=YOUR_TOKEN` (replacing `YOUR_TOKEN` with the token you got from Botfather) and `heroku config:set HEROKU_URL=$(heroku info -s | grep web_url | cut -d= -f2)` to configure environment variables on the server.
-6. Run `git add -A && git commit -m "Ready to run on heroku" && git push heroku master` to deploy your bot to the Heroku server.
-7. Send `/event blabla` to the bot to check out if it works ok. Now you don't need to run `npm run start` locally anymore since the Heroku server is doing that.
-8. Whenever you made changes to the code, push the to Heroku again to deploy them.
+5. Configure environment variables on the server: Run `heroku config:set PROD_BOT_TOKEN=your-token` (replacing `your-token` with the token you got from Botfather. In case you created two bots, use the token from the bot that you would like to use in production here. The development-bot token is set in .env.).
+6. Run `heroku config:set HEROKU_URL=$(heroku info -s | grep web_url | cut -d= -f2)`.
+7. Run `git add -A && git commit -m "Ready to run on heroku" && git push heroku master` to deploy your bot to the Heroku server.
+8. Send `/event blabla` to the bot to check out if it works ok. Now you don't need to run `npm run start` locally anymore since the Heroku server is doing that.
+9. Whenever you made changes to the code, push them to Heroku again to deploy them.
 
-Also make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
+Also feel free to make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
 
 ### More Details for Developers
 

@@ -6,13 +6,13 @@ const ACTIONS = {
 };
 
 let bot;
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "development") {
+  const devBotToken = process.env.DEV_BOT_TOKEN;
+  bot = new Bot(devBotToken, { polling: true });
+} else {
   const prodBotToken = process.env.PROD_BOT_TOKEN;
   bot = new Bot(prodBotToken);
   bot.setWebHook(process.env.HEROKU_URL + prodBotToken);
-} else {
-  const devBotToken = process.env.DEV_BOT_TOKEN;
-  bot = new Bot(devBotToken, { polling: true });
 }
 console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
