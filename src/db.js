@@ -5,7 +5,7 @@ class DB {
   constructor() {
     this.db = new Client({
       connectionString: process.env.DATABASE_URL,
-      ssl: true
+      ssl: false
     });
   }
 
@@ -13,7 +13,7 @@ class DB {
     console.log("Initializing DB:", process.env.DATABASE_URL);
     this.db.connect();
     this.db
-      .query("SELECT * FROM blablablala;")
+      .query("SELECT * FROM blubb;")
       .then(res => {
         console.log(`Tables already exist: ${pretty(res.rows)}`);
       })
@@ -27,8 +27,10 @@ class DB {
 
 async function createTables(db) {
   await db.query(
-    `CREATE TABLE bla (eventID varchar(50), description varchar(1000));
-     CREATE TABLE attendees (eventID varchar(50), username varchar(50));`
+    "CREATE TABLE blubb (eventID varchar(50), description varchar(1000));"
+  );
+  await db.query(
+    "CREATE TABLE attendees (eventID varchar(50), description varchar(1000));"
   );
 }
 
