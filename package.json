@@ -15,6 +15,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.13.4",
     "node-telegram-bot-api": "^0.30.0",
-    "node-telegram-keyboard-wrapper": "^2.0.1"
+    "node-telegram-keyboard-wrapper": "^2.0.1",
+    "pg": "^7.12.0"
   }
 }

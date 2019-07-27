@@ -2,11 +2,15 @@ let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
 const { pretty } = require("./util");
+const DB = require("./db");
 
 const ACTIONS = {
   RSVP: "RSVP",
   CANCEL_RSVP: "CANCEL_RSVP"
 };
+
+let db = new DB();
+db.initializeDB().then(() => console.log("success"));
 
 let bot;
 if (process.env.NODE_ENV === "development") {
@@ -58,10 +62,13 @@ function createEvent(msg) {
     })
     .then(createdMsg => {
       const eventID = createEventIDFromMessage(createdMsg);
-      events[eventID] = {
-        text: eventDescriptionWithAuthor,
-        attendees: []
-      };
+      // events[eventID] = {
+      //   text: eventDescriptionWithAuthor,
+      //   attendees: []
+      // };
+      db.query(
+        `INSERT INTO events (eventID, description) VALUES ('${eventID}', '${eventDescriptionWithAuthor}');`
+      );
     });
 }
 
