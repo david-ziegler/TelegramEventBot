@@ -11,7 +11,7 @@ class DB {
 
   async initializeDB() {
     console.log("Initializing DB:", process.env.DATABASE_URL);
-    this.db.connect();
+    await this.db.connect();
     this.db
       .query("SELECT event_id FROM events;")
       .then(res => {
@@ -25,51 +25,100 @@ class DB {
   }
 
   async createTables() {
-    await this.db.query(
-      "CREATE TABLE events (event_id varchar(50), description varchar(1000));"
-    );
-    await this.db.query(
-      "CREATE TABLE attendees (event_id varchar(50), username varchar(100), full_name varchar(100));"
-    );
+    await this.db
+      .query(
+        "CREATE TABLE events (event_id varchar(50), description varchar(1000));"
+      )
+      .then(() => {})
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
+    await this.db
+      .query(
+        "CREATE TABLE attendees (event_id varchar(50), username varchar(100), full_name varchar(100));"
+      )
+      .then(() => {})
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
   }
 
-  async insertEvent(eventID, description) {
-    await this.db.query(
-      `INSERT INTO events (event_id, description) VALUES ('${eventID}', '${description}');`
-    );
+  async insertEvent(event_id, description) {
+    await this.db
+      .query(
+        `INSERT INTO events (event_id, description) VALUES ('${event_id}', '${description}');`
+      )
+      .then(() => {})
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
   }
 
-  async rsvpToEvent(eventID, username, fullName) {
-    await this.db.query(
-      `INSERT INTO attendees (event_id, username, full_name) VALUES ('${eventID}', '${username}', '${fullName}');`
-    );
+  async rsvpToEvent(event_id, username, full_name) {
+    await this.db
+      .query(
+        `INSERT INTO attendees (event_id, username, full_name) VALUES ('${event_id}', '${username}', '${full_name}');`
+      )
+      .then(() => {})
+      .catch(err => {
+        console.error(
+          `Error while writing RSVP to database: event_id=${event_id}, username=${username}: ${err}`
+        );
+      });
   }
 
-  async removeRsvpFromEvent(eventID, username) {
-    await this.db.query(
-      `DELETE FROM attendees WHERE event_id='${eventID}' AND username='${username}';`
-    );
+  async removeRsvpFromEvent(event_id, username) {
+    await this.db
+      .query(
+        `DELETE FROM attendees WHERE event_id='${event_id}' AND username='${username}';`
+      )
+      .then(() => {})
+      .catch(err => {
+        console.error(
+          `Error while writing RSVP-Cancellation to database: event_id=${event_id}, username=${username}: ${err}`
+        );
+      });
   }
 
-  async getEvent(eventID) {
-    const res = await this.db.query(
-      `SELECT * FROM events WHERE event_id='${eventID}';`
-    );
-    return res.rows[0];
+  async getEvent(event_id) {
+    return await this.db
+      .query(`SELECT * FROM events WHERE event_id='${event_id}';`)
+      .then(res => {
+        return res.rows[0];
+      })
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
   }
 
-  async getAttendeeByUsernameAndEventID(eventID, username) {
-    const res = await this.db.query(
-      `SELECT * FROM attendees WHERE event_id='${eventID}' AND username='${username}';`
-    );
-    return res.rows;
+  async getAttendeeByUsernameAndEventID(event_id, username) {
+    return await this.db
+      .query(
+        `SELECT * FROM attendees WHERE event_id='${event_id}' AND username='${username}';`
+      )
+      .then(res => {
+        return res.rows;
+      })
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
   }
 
-  async getAttendeesByEventID(eventID) {
-    const res = await this.db.query(
-      `SELECT * FROM attendees WHERE event_id='${eventID}';`
-    );
-    return res.rows;
+  async getAttendeesByEventID(event_id) {
+    return await this.db
+      .query(`SELECT * FROM attendees WHERE event_id='${event_id}';`)
+      .then(res => {
+        return res.rows;
+      })
+      .catch(err => {
+        console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
+        bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+      });
   }
 }
 

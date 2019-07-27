@@ -23,8 +23,6 @@ if (process.env.NODE_ENV === "development") {
 }
 console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
 
-let events = {};
-
 const rsvpButtons = new InlineKeyboard();
 rsvpButtons.addRow({
   text: i18n.buttons.rsvp,
@@ -63,9 +61,9 @@ function createEvent(msg) {
       parse_mode: "markdown",
       ...rsvpButtons.build()
     })
-    .then(created_msg => {
+    .then(async created_msg => {
       const event_id = createEventIDFromMessage(created_msg);
-      db.insertEvent(event_id, event_description_with_author);
+      await db.insertEvent(event_id, event_description_with_author);
     });
 }
 
@@ -88,30 +86,9 @@ function deleteMessage(msg) {
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   const event_id = createEventIDFromMessage(msg);
-  const event = await db
-    .getEvent(event_id)
-    .then(res => {
-      return res;
-    })
-    .catch(err => {
-      console.error(
-        `RSVP: Error while retrieving event ${event_id}, user: ${
-          user.username
-        }:`,
-        err
-      );
-      bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
-    });
+  const event = await db.getEvent(event_id);
 
-  const rsvpedAlready = await didThisUserRsvpAlready(event_id, user)
-    .then(res => res)
-    .catch(err => {
-      console.error(
-        `Error while retrieving RSVP-status: event_id=${event_id}, username=${username}: ${err}`
-      );
-      bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
-    });
-
+  const rsvpedAlready = await didThisUserRsvpAlready(event_id, user);
   if (
     (cancellingRSVP && !rsvpedAlready) ||
     (!cancellingRSVP && rsvpedAlready)
@@ -121,23 +98,9 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   }
 
   if (!cancellingRSVP) {
-    await db
-      .rsvpToEvent(event_id, user.username, getFullNameString(user))
-      .then(() => {})
-      .catch(err =>
-        console.error(
-          `Error while writing RSVP to database: event_id=${event_id}, username=${username}: ${err}`
-        )
-      );
+    await db.rsvpToEvent(event_id, user.username, getFullNameString(user));
   } else {
-    await db
-      .removeRsvpFromEvent(event_id, user.username)
-      .then(() => {})
-      .catch(err =>
-        console.error(
-          `Error while writing RSVP-Cancellation to database: event_id=${event_id}, username=${username}: ${err}`
-        )
-      );
+    await db.removeRsvpFromEvent(event_id, user.username);
   }
 
   bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
@@ -169,26 +132,6 @@ async function didThisUserRsvpAlready(event_id, user) {
   );
   return events_attended_to.length > 0;
 }
-
-// function getAttendeeListWithUserAdded(originalAttendees, user) {
-//   const name_of_new_attendee = getFullNameString(user);
-//   if (originalAttendees.includes(name_of_new_attendee)) {
-//     return originalAttendees;
-//   } else {
-//     return originalAttendees.concat(name_of_new_attendee);
-//   }
-// }
-
-// function removeUserFromAttendeeList(originalAttendees, user) {
-//   const name_of_new_attendee = getFullNameString(user);
-//   if (originalAttendees.includes(name_of_new_attendee)) {
-//     originalAttendees.splice(
-//       originalAttendees.indexOf(name_of_new_attendee),
-//       1
-//     );
-//   }
-//   return;
-// }
 
 function getFullNameString(user) {
   return [user.first_name, user.last_name]
