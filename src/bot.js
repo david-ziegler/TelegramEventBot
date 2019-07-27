@@ -1,5 +1,6 @@
 let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
+const i18n = require("./i18n");
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -21,11 +22,11 @@ let events = {};
 
 const rsvpButtons = new InlineKeyboard();
 rsvpButtons.addRow({
-  text: "👍    zusagen",
+  text: i18n.buttons.rsvp,
   callback_data: ACTIONS.RSVP
 });
 rsvpButtons.addRow({
-  text: "🚫  doch nicht",
+  text: i18n.buttons.cancel_rsvp,
   callback_data: ACTIONS.CANCEL_RSVP
 });
 
@@ -71,7 +72,9 @@ function removeBotCommand(text) {
 }
 
 function addEventAuthor(text, author) {
-  return `${text}\n\n_Erstellt von ${getFullNameString(author)}_`;
+  return `${text}\n\n_${i18n.messageContent.created_by} ${getFullNameString(
+    author
+  )}_`;
 }
 
 function deleteMessage(msg) {
@@ -80,6 +83,9 @@ function deleteMessage(msg) {
 
 function rsvpToEvent(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
+  if (!events[eventID]) {
+    bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+  }
   if (!rsvpedAlready(eventID, user)) {
     events[eventID].attendees = getAttendeeListWithUserAdded(
       events[eventID].attendees,
@@ -100,6 +106,9 @@ function rsvpToEvent(user, msg, queryID) {
 
 function cancelRsvp(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
+  if (!events[eventID]) {
+    bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+  }
   if (rsvpedAlready(eventID, user)) {
     removeUserFromAttendeeList(events[eventID].attendees, user);
     bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
@@ -154,7 +163,9 @@ function createEventIDFromMessage(msg) {
 }
 
 function getEventTextWithAttendees(event) {
-  return `${event.text}\n\n*Zusagen:*${event.attendees.reduce(
+  return `${event.text}\n\n*${
+    i18n.messageContent.rsvps
+  }:*${event.attendees.reduce(
     (attendeesString, attendee) => `${attendeesString}\n${attendee}`,
     ""
   )}`;
