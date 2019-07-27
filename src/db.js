@@ -13,25 +13,64 @@ class DB {
     console.log("Initializing DB:", process.env.DATABASE_URL);
     this.db.connect();
     this.db
-      .query("SELECT * FROM blubb;")
+      .query("SELECT event_id FROM events;")
       .then(res => {
-        console.log(`Tables already exist: ${pretty(res.rows)}`);
+        console.log("Tables exist, DB is ready.");
       })
       .catch(async err => {
         console.log("Tables don't exist yet, creating them now...");
         console.log(err);
-        await createTables(this.db);
+        await this.createTables();
       });
   }
-}
 
-async function createTables(db) {
-  await db.query(
-    "CREATE TABLE blubb (eventID varchar(50), description varchar(1000));"
-  );
-  await db.query(
-    "CREATE TABLE attendees (eventID varchar(50), description varchar(1000));"
-  );
+  async createTables() {
+    await this.db.query(
+      "CREATE TABLE events (event_id varchar(50), description varchar(1000));"
+    );
+    await this.db.query(
+      "CREATE TABLE attendees (event_id varchar(50), username varchar(100), full_name varchar(100));"
+    );
+  }
+
+  async insertEvent(eventID, description) {
+    await this.db.query(
+      `INSERT INTO events (event_id, description) VALUES ('${eventID}', '${description}');`
+    );
+  }
+
+  async rsvpToEvent(eventID, username, fullName) {
+    await this.db.query(
+      `INSERT INTO attendees (event_id, username, full_name) VALUES ('${eventID}', '${username}', '${fullName}');`
+    );
+  }
+
+  async removeRsvpFromEvent(eventID, username) {
+    await this.db.query(
+      `DELETE FROM attendees WHERE event_id='${eventID}' AND username='${username}';`
+    );
+  }
+
+  async getEvent(eventID) {
+    const res = await this.db.query(
+      `SELECT * FROM events WHERE event_id='${eventID}';`
+    );
+    return res.rows[0];
+  }
+
+  async getAttendeeByUsernameAndEventID(eventID, username) {
+    const res = await this.db.query(
+      `SELECT * FROM attendees WHERE event_id='${eventID}' AND username='${username}';`
+    );
+    return res.rows;
+  }
+
+  async getAttendeesByEventID(eventID) {
+    const res = await this.db.query(
+      `SELECT * FROM attendees WHERE event_id='${eventID}';`
+    );
+    return res.rows;
+  }
 }
 
 module.exports = DB;

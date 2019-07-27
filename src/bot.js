@@ -10,7 +10,7 @@ const ACTIONS = {
 };
 
 let db = new DB();
-db.initializeDB().then(() => console.log("success"));
+db.initializeDB().then(() => console.log(""));
 
 let bot;
 if (process.env.NODE_ENV === "development") {
@@ -45,30 +45,27 @@ bot.onText(/^\/edit_event.*/, msg => {
 
 bot.on("callback_query", query => {
   if (query.data === ACTIONS.RSVP) {
-    rsvpToEvent(query.from, query.message, query.id);
+    changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
-    cancelRsvp(query.from, query.message, query.id);
+    changeRSVPForUser(query.from, query.message, query.id, true);
   }
 });
 
 function createEvent(msg) {
-  const eventDescription = removeBotCommand(msg.text);
-  const eventDescriptionWithAuthor = addEventAuthor(eventDescription, msg.from);
+  const event_description = removeBotCommand(msg.text);
+  const event_description_with_author = addEventAuthor(
+    event_description,
+    msg.from
+  );
   deleteMessage(msg);
   bot
-    .sendMessage(msg.chat.id, eventDescriptionWithAuthor, {
+    .sendMessage(msg.chat.id, event_description_with_author, {
       parse_mode: "markdown",
       ...rsvpButtons.build()
     })
-    .then(createdMsg => {
-      const eventID = createEventIDFromMessage(createdMsg);
-      // events[eventID] = {
-      //   text: eventDescriptionWithAuthor,
-      //   attendees: []
-      // };
-      db.query(
-        `INSERT INTO events (eventID, description) VALUES ('${eventID}', '${eventDescriptionWithAuthor}');`
-      );
+    .then(created_msg => {
+      const event_id = createEventIDFromMessage(created_msg);
+      db.insertEvent(event_id, event_description_with_author);
     });
 }
 
@@ -80,7 +77,7 @@ function removeBotCommand(text) {
 }
 
 function addEventAuthor(text, author) {
-  return `${text}\n\n_${i18n.messageContent.created_by} ${getFullNameString(
+  return `${text}\n\n_${i18n.message_content.created_by} ${getFullNameString(
     author
   )}_`;
 }
@@ -89,76 +86,109 @@ function deleteMessage(msg) {
   bot.deleteMessage(msg.chat.id, msg.message_id);
 }
 
-function rsvpToEvent(user, msg, queryID) {
-  const eventID = createEventIDFromMessage(msg);
-  if (!events[eventID]) {
-    console.error(`RSVP: event doesn't exist. user: ${user.username},
-eventID: ${eventID}, events: ${pretty(events)}`);
-    bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
-  }
-  if (!rsvpedAlready(eventID, user)) {
-    events[eventID].attendees = getAttendeeListWithUserAdded(
-      events[eventID].attendees,
-      user
-    );
-    bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
-      bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        parse_mode: "markdown",
-        ...rsvpButtons.build()
-      });
+async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+  const event_id = createEventIDFromMessage(msg);
+  const event = await db
+    .getEvent(event_id)
+    .then(res => {
+      return res;
+    })
+    .catch(err => {
+      console.error(
+        `RSVP: Error while retrieving event ${event_id}, user: ${
+          user.username
+        }:`,
+        err
+      );
+      bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
     });
-  } else {
+
+  const rsvpedAlready = await didThisUserRsvpAlready(event_id, user)
+    .then(res => res)
+    .catch(err => {
+      console.error(
+        `Error while retrieving RSVP-status: event_id=${event_id}, username=${username}: ${err}`
+      );
+      bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
+    });
+
+  if (
+    (cancellingRSVP && !rsvpedAlready) ||
+    (!cancellingRSVP && rsvpedAlready)
+  ) {
     bot.answerCallbackQuery(queryID, { text: "" });
+    return;
   }
-}
 
-function cancelRsvp(user, msg, queryID) {
-  const eventID = createEventIDFromMessage(msg);
-  if (!events[eventID]) {
-    console.error(`CANCEL_RSVP: event doesn't exist. user: ${user.username},
-eventID: ${eventID}, events: ${pretty(events)}`);
-    bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
-  }
-  if (rsvpedAlready(eventID, user)) {
-    removeUserFromAttendeeList(events[eventID].attendees, user);
-    bot.answerCallbackQuery(queryID, { text: "" }).then(function() {
-      bot.editMessageText(getEventTextWithAttendees(events[eventID]), {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        parse_mode: "markdown",
-        ...rsvpButtons.build()
-      });
-    });
+  if (!cancellingRSVP) {
+    await db
+      .rsvpToEvent(event_id, user.username, getFullNameString(user))
+      .then(() => {})
+      .catch(err =>
+        console.error(
+          `Error while writing RSVP to database: event_id=${event_id}, username=${username}: ${err}`
+        )
+      );
   } else {
-    bot.answerCallbackQuery(queryID, {
-      text: ""
+    await db
+      .removeRsvpFromEvent(event_id, user.username)
+      .then(() => {})
+      .catch(err =>
+        console.error(
+          `Error while writing RSVP-Cancellation to database: event_id=${event_id}, username=${username}: ${err}`
+        )
+      );
+  }
+
+  bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
+    const attendees = await db
+      .getAttendeesByEventID(event_id)
+      .then(res => res)
+      .catch(err =>
+        console.error(
+          `Error while getting attendees from database: event_id=${event_id}`
+        )
+      );
+    const eventTextWithAttendees = getEventTextWithAttendees(
+      event.description,
+      attendees
+    );
+    bot.editMessageText(eventTextWithAttendees, {
+      chat_id: msg.chat.id,
+      message_id: msg.message_id,
+      parse_mode: "markdown",
+      ...rsvpButtons.build()
     });
-  }
+  });
 }
 
-function rsvpedAlready(eventID, user) {
-  const nameOfNewAttendee = getFullNameString(user);
-  return events[eventID].attendees.includes(nameOfNewAttendee);
+async function didThisUserRsvpAlready(event_id, user) {
+  const events_attended_to = await db.getAttendeeByUsernameAndEventID(
+    event_id,
+    user.username
+  );
+  return events_attended_to.length > 0;
 }
 
-function getAttendeeListWithUserAdded(originalAttendees, user) {
-  const nameOfNewAttendee = getFullNameString(user);
-  if (originalAttendees.includes(nameOfNewAttendee)) {
-    return originalAttendees;
-  } else {
-    return originalAttendees.concat(nameOfNewAttendee);
-  }
-}
+// function getAttendeeListWithUserAdded(originalAttendees, user) {
+//   const name_of_new_attendee = getFullNameString(user);
+//   if (originalAttendees.includes(name_of_new_attendee)) {
+//     return originalAttendees;
+//   } else {
+//     return originalAttendees.concat(name_of_new_attendee);
+//   }
+// }
 
-function removeUserFromAttendeeList(originalAttendees, user) {
-  const nameOfNewAttendee = getFullNameString(user);
-  if (originalAttendees.includes(nameOfNewAttendee)) {
-    originalAttendees.splice(originalAttendees.indexOf(nameOfNewAttendee), 1);
-  }
-  return;
-}
+// function removeUserFromAttendeeList(originalAttendees, user) {
+//   const name_of_new_attendee = getFullNameString(user);
+//   if (originalAttendees.includes(name_of_new_attendee)) {
+//     originalAttendees.splice(
+//       originalAttendees.indexOf(name_of_new_attendee),
+//       1
+//     );
+//   }
+//   return;
+// }
 
 function getFullNameString(user) {
   return [user.first_name, user.last_name]
@@ -174,11 +204,10 @@ function createEventIDFromMessage(msg) {
   return `${msg.chat.id}_${msg.message_id}`;
 }
 
-function getEventTextWithAttendees(event) {
-  return `${event.text}\n\n*${
-    i18n.messageContent.rsvps
-  }:*${event.attendees.reduce(
-    (attendeesString, attendee) => `${attendeesString}\n${attendee}`,
+function getEventTextWithAttendees(description, attendees) {
+  return `${description}\n\n*${i18n.message_content.rsvps}:*${attendees.reduce(
+    (attendeesString, attendeeRow) =>
+      `${attendeesString}\n${attendeeRow.full_name}`,
     ""
   )}`;
 }

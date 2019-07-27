@@ -1,5 +1,5 @@
 module.exports = {
-  messageContent: {
+  message_content: {
     created_by: "Erstellt von",
     rsvps: "Zusagen"
   },
