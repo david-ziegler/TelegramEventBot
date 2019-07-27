@@ -1,6 +1,7 @@
 let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
+const { pretty } = require("./util");
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -84,6 +85,8 @@ function deleteMessage(msg) {
 function rsvpToEvent(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
   if (!events[eventID]) {
+    console.error(`RSVP: event doesn't exist. user: ${user.username},
+eventID: ${eventID}, events: ${pretty(events)}`);
     bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
   }
   if (!rsvpedAlready(eventID, user)) {
@@ -107,6 +110,8 @@ function rsvpToEvent(user, msg, queryID) {
 function cancelRsvp(user, msg, queryID) {
   const eventID = createEventIDFromMessage(msg);
   if (!events[eventID]) {
+    console.error(`CANCEL_RSVP: event doesn't exist. user: ${user.username},
+eventID: ${eventID}, events: ${pretty(events)}`);
     bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
   }
   if (rsvpedAlready(eventID, user)) {
