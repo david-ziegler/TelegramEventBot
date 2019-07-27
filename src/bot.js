@@ -1,5 +1,6 @@
-const Bot = require("node-telegram-bot-api");
-const { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
+let Bot = require("node-telegram-bot-api");
+let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
+
 const ACTIONS = {
   RSVP: "RSVP",
   CANCEL_RSVP: "CANCEL_RSVP"
@@ -70,7 +71,6 @@ function removeBotCommand(text) {
 }
 
 function addEventAuthor(text, author) {
-  console.log("author", text, author);
   return `${text}\n\n_Erstellt von ${getFullNameString(author)}_`;
 }
 
