@@ -1,14 +1,14 @@
 {
-  "name": "heroku-node-telegram-bot",
+  "name": "create-events-bot",
   "version": "1.0.2",
-  "description": "Starter pack for running telegram bot on the Heroku using Node.js",
+  "description": "Create events in Telegram groups",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "switch_to_dev": "export $(cat .env | xargs) && wget --spider https://api.telegram.org/bot$PROD_BOT_TOKEN/setWebhook?url= --delete-after && node index.js"
   },
-  "author": "Volodymyr Lut",
+  "author": "David Ziegler",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.0",
