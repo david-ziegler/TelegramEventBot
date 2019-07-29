@@ -1,5 +1,7 @@
 const { Client } = require("pg");
-const { pretty } = require("./util");
+
+const ID_MAX_LENGTH = 100;
+const DESCRIPTION_MAX_LENGTH = 4500;
 
 class DB {
   constructor() {
@@ -18,7 +20,9 @@ class DB {
         console.log("Tables exist, DB is ready.");
       })
       .catch(async err => {
-        console.log("Tables don't exist yet, creating them now...");
+        console.log(
+          "Tables don't exist yet, creating them now... The following error noticed that probably database exists:"
+        );
         console.log(err);
         await this.createTables();
       });
@@ -27,7 +31,7 @@ class DB {
   async createTables() {
     await this.db
       .query(
-        "CREATE TABLE events (event_id varchar(50), description varchar(1000));"
+        `CREATE TABLE events (event_id varchar(${ID_MAX_LENGTH}), description varchar(${DESCRIPTION_MAX_LENGTH}));`
       )
       .then(() => {})
       .catch(err => {
@@ -36,7 +40,7 @@ class DB {
       });
     await this.db
       .query(
-        "CREATE TABLE attendees (event_id varchar(50), username varchar(100), full_name varchar(100));"
+        `CREATE TABLE attendees (event_id varchar(${ID_MAX_LENGTH}), username varchar(${ID_MAX_LENGTH}), full_name varchar(${ID_MAX_LENGTH}));`
       )
       .then(() => {})
       .catch(err => {
@@ -46,6 +50,14 @@ class DB {
   }
 
   async insertEvent(event_id, description) {
+    if (event_id.length > ID_MAX_LENGTH) {
+      console.error("Error: event_id too long");
+      return;
+    }
+    if (description.length > DESCRIPTION_MAX_LENGTH) {
+      console.error("Error: description too long");
+      return;
+    }
     await this.db
       .query(
         `INSERT INTO events (event_id, description) VALUES ('${event_id}', '${description}');`
@@ -58,6 +70,14 @@ class DB {
   }
 
   async rsvpToEvent(event_id, username, full_name) {
+    if (
+      event_id.length > ID_MAX_LENGTH ||
+      username > ID_MAX_LENGTH ||
+      full_name > ID_MAX_LENGTH
+    ) {
+      console.error("Error: event_id, username or full_name too long");
+      return;
+    }
     await this.db
       .query(
         `INSERT INTO attendees (event_id, username, full_name) VALUES ('${event_id}', '${username}', '${full_name}');`

@@ -1,7 +1,6 @@
 let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
-const { pretty } = require("./util");
 const DB = require("./db");
 
 const ACTIONS = {
@@ -51,8 +50,11 @@ bot.on("callback_query", query => {
 
 function createEvent(msg) {
   const event_description = removeBotCommand(msg.text);
+  const event_description_valid_length = shortenDescriptionIfTooLong(
+    event_description
+  );
   const event_description_with_author = addEventAuthor(
-    event_description,
+    event_description_valid_length,
     msg.from
   );
   deleteMessage(msg);
@@ -65,6 +67,15 @@ function createEvent(msg) {
       const event_id = createEventIDFromMessage(created_msg);
       await db.insertEvent(event_id, event_description_with_author);
     });
+}
+
+function shortenDescriptionIfTooLong(description) {
+  const MAX_LENGTH = 3500;
+  if (description.length > MAX_LENGTH) {
+    return description.substring(0, 3500) + "...";
+  } else {
+    return description;
+  }
 }
 
 function removeBotCommand(text) {
