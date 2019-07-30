@@ -1,4 +1,5 @@
 const { Client } = require("pg");
+const { pretty } = require("./util");
 
 const ID_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 4500;
@@ -70,6 +71,7 @@ class DB {
   }
 
   async rsvpToEvent(event_id, user_id, full_name) {
+    console.log("in rsvpToEvent:", event_id, user_id, full_name);
     if (
       event_id.length > ID_MAX_LENGTH ||
       user_id.length > ID_MAX_LENGTH ||
@@ -104,9 +106,11 @@ class DB {
   }
 
   async getEvent(event_id) {
+    console.log("getEvent, event_id:", event_id);
     return await this.db
       .query(`SELECT * FROM events WHERE event_id='${event_id}';`)
       .then(res => {
+        console.log("RESULT:", pretty(res));
         return res.rows[0];
       })
       .catch(err => {
@@ -116,6 +120,7 @@ class DB {
   }
 
   async getAttendeeByEventIDAndUserID(event_id, user_id) {
+    console.log("getAttendeeByEventIDAndUserID", event_id, user_id);
     return await this.db
       .query(
         `SELECT * FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`

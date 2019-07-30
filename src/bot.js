@@ -42,6 +42,7 @@ bot.onText(/^\/edit_event.*/, msg => {
 });
 
 bot.on("callback_query", query => {
+  console.log("query", pretty(query));
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
@@ -97,26 +98,35 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+  console.log("1");
   const user_id = user.id.toString();
+  console.log("user_id:", user_id);
   const event_id = createEventIDFromMessage(msg);
+  console.log("event_id:", event_id);
   const event = await db.getEvent(event_id);
+  console.log("event:", pretty(event));
 
   const rsvpedAlready = await didThisUserRsvpAlready(event_id, user_id);
+  console.log("rsvpedAlready:", rsvpedAlready);
   if (
     (cancellingRSVP && !rsvpedAlready) ||
     (!cancellingRSVP && rsvpedAlready)
   ) {
+    console.log("ABORT");
     bot.answerCallbackQuery(queryID, { text: "" });
     return;
   }
 
   if (!cancellingRSVP) {
+    console.log("rsvpToEvent");
     await db.rsvpToEvent(event_id, user_id, getFullNameString(user));
   } else {
     await db.removeRsvpFromEvent(event_id, user_id);
   }
+  console.log("rsvping Done");
 
   bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
+    console.log("answered Callback");
     const attendees = await db
       .getAttendeesByEventID(event_id)
       .then(res => res)
@@ -125,9 +135,16 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
           `Error while getting attendees from database: event_id=${event_id}`
         )
       );
+    console.log("attendees:", attendees);
     const eventTextWithAttendees = getEventTextWithAttendees(
       event.description,
       attendees
+    );
+    console.log(
+      "eventTextWith",
+      eventTextWithAttendees,
+      msg.chat,
+      msg.message_id
     );
     bot.editMessageText(eventTextWithAttendees, {
       chat_id: msg.chat.id,
@@ -135,6 +152,7 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
       parse_mode: "markdown",
       ...rsvpButtons.build()
     });
+    console.log("editedMessage");
   });
 }
 
@@ -143,6 +161,7 @@ async function didThisUserRsvpAlready(event_id, user_id) {
     event_id,
     user_id
   );
+  console.log("eventsAttendedTo:", events_attended_to);
   return events_attended_to.length > 0;
 }
 
