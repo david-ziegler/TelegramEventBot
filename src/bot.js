@@ -2,6 +2,7 @@ let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
 const DB = require("./db");
+const { pretty } = require("./util");
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -41,11 +42,13 @@ bot.onText(/^\/edit_event.*/, msg => {
 });
 
 bot.on("callback_query", query => {
+  console.log("QUERY", pretty(query));
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
     changeRSVPForUser(query.from, query.message, query.id, true);
   }
+  console.log("DONE");
 });
 
 function createEvent(msg) {
@@ -96,25 +99,34 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+  console.log("1");
   const event_id = createEventIDFromMessage(msg);
+  console.log("2");
   const event = await db.getEvent(event_id);
+  console.log(`3, event_id=${event_id}, event=${pretty(event)}`);
 
   const rsvpedAlready = await didThisUserRsvpAlready(event_id, user);
+  console.log(`rsvpedAlready ${rsvpedAlready}`);
   if (
     (cancellingRSVP && !rsvpedAlready) ||
     (!cancellingRSVP && rsvpedAlready)
   ) {
+    console.log("ABORT");
     bot.answerCallbackQuery(queryID, { text: "" });
     return;
   }
 
   if (!cancellingRSVP) {
+    console.log("rsvpToEvent");
     await db.rsvpToEvent(event_id, user.username, getFullNameString(user));
   } else {
+    console.log("removeRsvpFromEvent");
     await db.removeRsvpFromEvent(event_id, user.username);
   }
+  console.log("4");
 
   bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
+    console.log("5");
     const attendees = await db
       .getAttendeesByEventID(event_id)
       .then(res => res)
@@ -123,17 +135,21 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
           `Error while getting attendees from database: event_id=${event_id}`
         )
       );
+    console.log(`attendees ${attendees}`);
     const eventTextWithAttendees = getEventTextWithAttendees(
       event.description,
       attendees
     );
+    console.log(`text with attendees = ${eventTextWithAttendees}`);
     bot.editMessageText(eventTextWithAttendees, {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
       parse_mode: "markdown",
       ...rsvpButtons.build()
     });
+    console.log("6");
   });
+  console.log("7");
 }
 
 async function didThisUserRsvpAlready(event_id, user) {
