@@ -2,6 +2,7 @@ let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
 const DB = require("./db");
+const { pretty } = require("./util");
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -9,7 +10,7 @@ const ACTIONS = {
 };
 
 let db = new DB();
-db.initializeDB().then(() => console.log(""));
+db.initializeDB().then(() => console.log("Initialized DB"));
 
 let bot;
 if (process.env.NODE_ENV === "development") {
