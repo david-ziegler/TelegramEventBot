@@ -40,7 +40,7 @@ class DB {
       });
     await this.db
       .query(
-        `CREATE TABLE attendees (event_id varchar(${ID_MAX_LENGTH}), username varchar(${ID_MAX_LENGTH}), full_name varchar(${ID_MAX_LENGTH}));`
+        `CREATE TABLE attendees (event_id varchar(${ID_MAX_LENGTH}), user_id varchar(${ID_MAX_LENGTH}), full_name varchar(${ID_MAX_LENGTH}));`
       )
       .then(() => {})
       .catch(err => {
@@ -69,36 +69,36 @@ class DB {
       });
   }
 
-  async rsvpToEvent(event_id, username, full_name) {
+  async rsvpToEvent(event_id, user_id, full_name) {
     if (
       event_id.length > ID_MAX_LENGTH ||
-      username > ID_MAX_LENGTH ||
-      full_name > ID_MAX_LENGTH
+      user_id.length > ID_MAX_LENGTH ||
+      full_name.length > ID_MAX_LENGTH
     ) {
-      console.error("Error: event_id, username or full_name too long");
+      console.error("Error: event_id, user_id or full_name too long");
       return;
     }
     await this.db
       .query(
-        `INSERT INTO attendees (event_id, username, full_name) VALUES ('${event_id}', '${username}', '${full_name}');`
+        `INSERT INTO attendees (event_id, user_id, full_name) VALUES ('${event_id}', '${user_id}', '${full_name}');`
       )
       .then(() => {})
       .catch(err => {
         console.error(
-          `Error while writing RSVP to database: event_id=${event_id}, username=${username}: ${err}`
+          `Error while writing RSVP to database: event_id=${event_id}, user_id=${user_id}: ${err}`
         );
       });
   }
 
-  async removeRsvpFromEvent(event_id, username) {
+  async removeRsvpFromEvent(event_id, user_id) {
     await this.db
       .query(
-        `DELETE FROM attendees WHERE event_id='${event_id}' AND username='${username}';`
+        `DELETE FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`
       )
       .then(() => {})
       .catch(err => {
         console.error(
-          `Error while writing RSVP-Cancellation to database: event_id=${event_id}, username=${username}: ${err}`
+          `Error while writing RSVP-Cancellation to database: event_id=${event_id}, user_id=${user_id}: ${err}`
         );
       });
   }
@@ -115,10 +115,10 @@ class DB {
       });
   }
 
-  async getAttendeeByUsernameAndEventID(event_id, username) {
+  async getAttendeeByEventIDAndUserID(event_id, user_id) {
     return await this.db
       .query(
-        `SELECT * FROM attendees WHERE event_id='${event_id}' AND username='${username}';`
+        `SELECT * FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`
       )
       .then(res => {
         return res.rows;

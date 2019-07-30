@@ -96,10 +96,11 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+  const user_id = user.id.toString();
   const event_id = createEventIDFromMessage(msg);
   const event = await db.getEvent(event_id);
 
-  const rsvpedAlready = await didThisUserRsvpAlready(event_id, user);
+  const rsvpedAlready = await didThisUserRsvpAlready(event_id, user_id);
   if (
     (cancellingRSVP && !rsvpedAlready) ||
     (!cancellingRSVP && rsvpedAlready)
@@ -109,9 +110,9 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   }
 
   if (!cancellingRSVP) {
-    await db.rsvpToEvent(event_id, user.username, getFullNameString(user));
+    await db.rsvpToEvent(event_id, user_id, getFullNameString(user));
   } else {
-    await db.removeRsvpFromEvent(event_id, user.username);
+    await db.removeRsvpFromEvent(event_id, user_id);
   }
 
   bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
@@ -136,15 +137,18 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   });
 }
 
-async function didThisUserRsvpAlready(event_id, user) {
-  const events_attended_to = await db.getAttendeeByUsernameAndEventID(
+async function didThisUserRsvpAlready(event_id, user_id) {
+  const events_attended_to = await db.getAttendeeByEventIDAndUserID(
     event_id,
-    user.username
+    user_id
   );
   return events_attended_to.length > 0;
 }
 
 function getFullNameString(user) {
+  if (!user.first_name && !user.last_name) {
+    return user.username;
+  }
   return [user.first_name, user.last_name]
     .filter(namePart => namePartIsPresent(namePart))
     .join(" ");
