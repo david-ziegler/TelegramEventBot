@@ -66,7 +66,12 @@ function createEvent(msg) {
     })
     .then(async created_msg => {
       const event_id = createEventIDFromMessage(created_msg);
-      await db.insertEvent(event_id, event_description_with_author);
+      await db.insertEvent(
+        event_id,
+        created_msg.chat.id,
+        created_msg.message_id,
+        event_description_with_author
+      );
     });
 }
 

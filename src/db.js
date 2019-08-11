@@ -32,7 +32,12 @@ class DB {
   async createTables() {
     await this.db
       .query(
-        `CREATE TABLE events (event_id varchar(${ID_MAX_LENGTH}), description varchar(${DESCRIPTION_MAX_LENGTH}));`
+        `CREATE TABLE events (
+event_id varchar(${ID_MAX_LENGTH}),
+chat_id bigint, 
+message_id bigint, 
+description varchar(${DESCRIPTION_MAX_LENGTH})
+        );`
       )
       .then(() => {})
       .catch(err => {
@@ -50,7 +55,7 @@ class DB {
       });
   }
 
-  async insertEvent(event_id, description) {
+  async insertEvent(event_id, chat_id, message_id, description) {
     if (event_id.length > ID_MAX_LENGTH) {
       console.error("Error: event_id too long");
       return;
@@ -59,9 +64,12 @@ class DB {
       console.error("Error: description too long");
       return;
     }
+    const chat_id_int = Number.parseInt(chat_id);
+    const message_id_int = Number.parseInt(message_id);
     await this.db
       .query(
-        `INSERT INTO events (event_id, description) VALUES ('${event_id}', '${description}');`
+        `INSERT INTO events (event_id, chat_id, message_id, description)
+        VALUES ('${event_id}', '${chat_id_int}', '${message_id_int}', '${description}');`
       )
       .then(() => {})
       .catch(err => {
