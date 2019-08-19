@@ -2,7 +2,7 @@ let Bot = require("node-telegram-bot-api");
 let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
 const i18n = require("./i18n");
 const DB = require("./db");
-const { pretty } = require("./util");
+const { sanitize } = require("./util");
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -58,9 +58,14 @@ function createEvent(msg) {
     event_description_valid_length,
     msg.from
   );
+
+  const sanitized_event_description_with_author = sanitize(
+    event_description_with_author
+  );
+
   deleteMessage(msg);
   bot
-    .sendMessage(msg.chat.id, event_description_with_author, {
+    .sendMessage(msg.chat.id, sanitized_event_description_with_author, {
       parse_mode: "markdown",
       ...rsvpButtons.build()
     })
@@ -70,7 +75,7 @@ function createEvent(msg) {
         event_id,
         created_msg.chat.id,
         created_msg.message_id,
-        event_description_with_author
+        sanitized_event_description_with_author
       );
     });
 }
@@ -153,9 +158,9 @@ async function didThisUserRsvpAlready(event_id, user_id) {
 
 function getFullNameString(user) {
   if (!user.first_name && !user.last_name) {
-    return user.username;
+    return sanitize(user.username);
   }
-  return [user.first_name, user.last_name]
+  return [sanitize(user.first_name), sanitize(user.last_name)]
     .filter(namePart => namePartIsPresent(namePart))
     .join(" ");
 }

@@ -1,5 +1,5 @@
 const { Client } = require("pg");
-const { pretty } = require("./util");
+const { sanitize } = require("./util");
 
 const ID_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 4500;
@@ -87,9 +87,12 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
       console.error("Error: event_id, user_id or full_name too long");
       return;
     }
+
+    const sanitized_full_name = sanitize(full_name);
+
     await this.db
       .query(
-        `INSERT INTO attendees (event_id, user_id, full_name) VALUES ('${event_id}', '${user_id}', '${full_name}');`
+        `INSERT INTO attendees (event_id, user_id, full_name) VALUES ('${event_id}', '${user_id}', '${sanitized_full_name}');`
       )
       .then(() => {})
       .catch(err => {
