@@ -3,6 +3,9 @@ function pretty(object) {
 }
 
 function sanitize(original) {
+  if (!original) {
+    return;
+  }
   const unwantedCharacters = ["_", "*", "[", "]"];
   return unwantedCharacters.reduce((original, character) => {
     return removeOddNumberOfCertainCharacter(original, character);
