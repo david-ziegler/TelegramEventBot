@@ -37,10 +37,6 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
-bot.onText(/^\/edit_event.*/, msg => {
-  editEvent(msg);
-});
-
 bot.on("callback_query", query => {
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
@@ -90,10 +86,7 @@ function shortenDescriptionIfTooLong(description) {
 }
 
 function removeBotCommand(text) {
-  return text
-    .replace("/event ", "")
-    .replace("/Event", "")
-    .replace("/edit_event", "");
+  return text.replace(/^\/(E|e)vent( |\n)?/, "");
 }
 
 function addEventAuthor(text, author) {
