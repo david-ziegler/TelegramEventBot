@@ -4,6 +4,9 @@ With this bot you can create events in Telegram groups. People can RSVP to the e
 
 This makes it possible to get much less notifications in large groups. Instead of everyone writing "I'm in" etc. they can click on "zusagen" for which no extra notifications are created. It just shows a nice overview of everyone who already RSVP-ed.
 
+![Screenshot1](https://user-images.githubusercontent.com/3832093/63649676-de203d80-c740-11e9-8d3c-e6f9cd8effef.jpg)
+
+
 ## How to add it to your group
 
 1. Open the Telegram group in which you would like to enable events.
