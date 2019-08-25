@@ -1,4 +1,4 @@
-# Create Events in Telegram Groups (Bot)
+# Create Events In Telegram Groups (Bot)
 
 With this bot you can create events in Telegram groups. People can RSVP to the event just by clicking on "zusagen" (it's currently only available in German).
 
@@ -7,7 +7,7 @@ This makes it possible to get much less notifications in large groups. Instead o
 ![mockup](https://user-images.githubusercontent.com/3832093/63650315-994cd480-c749-11e9-9787-97904e2d4a05.jpg)
 
 
-## How to add it to your group
+## How To Add It To Your Group
 
 1. Open the Telegram group in which you would like to enable events.
 2. Open group "Info" and click "Edit" to go to group settings.
@@ -17,7 +17,7 @@ This makes it possible to get much less notifications in large groups. Instead o
    The bot needs delete rights to work nicely since it deletes messages that start with "/event" and replaces them with the actual event. It will not delete anything else.
 6. Click on "Done" to add the bot to the group. It might ask whether you want to first add the bot as a member to the group and then promote it to admin. In that case click yes.
 
-## How to create an event
+## How To Create An Event
 
 1. In the group, type "/event Blablabla" as a message and send it. This will create an event with the description "Blablabla".
 2. Now people can RSVP by clicking on "Zusagen" or revert that by clicking on "doch nicht".
@@ -30,7 +30,7 @@ Currently, you can't edit or delete events. If you are a developer, Pull Request
 
 ## Contributing
 
-### Local development
+### Local Development
 
 Clone this repository and make any code changess to `bot.js`. In the terminal, go to the app's folder with `cd createEventsBot` and run
 
@@ -43,14 +43,14 @@ Now you can open Telegram (on the computer or phone) and use the bot (like in "H
 
 Troubleshooting: if `npm install` doesn't work you might want to try `sudo npm install`.
 
-### Create your own bot with your changes
+### Create Your Own Bot With Your Changes
 
 1. Follow the steps under "Local development"
 2. Create a new bot with [BotFather](https://core.telegram.org/bots#3-how-do-i-create-a-bot) and grab your TOKEN.
 3. Rename `.env_example` file into `.env` and set `DEV_BOT_TOKEN` to the token, you've got from BotFather.
    (You may also create two different bots and use one token for local development (`DEV_BOT_TOKEN`) and one for production (the deployed bot) (`PROD_BOT_TOKEN`)).
 
-### Deploy your bot to the heroku server
+### Deploy Your Bot To The Heroku Server
 
 1. Create a [Heroku account](https://heroku.com) and install the [Heroku Toolbelt](https://toolbelt.heroku.com/).
 2. Login to your Heroku account using `heroku login` in the terminal.
@@ -64,18 +64,17 @@ Troubleshooting: if `npm install` doesn't work you might want to try `sudo npm i
 
 Also feel free to make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
 
-### More Details for Developers
+### More Details For Developers
 
 In development mode the bot works using [polling](https://en.wikipedia.org/wiki/Push_technology#Long_polling) and on the Heroku server it uses [webhooks](https://core.telegram.org/bots/api#setwebhook), because Heroku will shut down the web-server after a period of inactivity that will result in your polling loop to shut down too. Once webhook was enabled, telegram will return an error `{"ok":false,"error_code":409,"description":"Error: Conflict: another webhook is active"}` when you will try to use polling again, and that's actually ok.
 
 To go back to development mode, `https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=` in your browser (replacing `YOUR_TOKEN` with the token, you've got from the BotFather). Or if you are on Linux you can instead run `npm run switch_to_dev`.
 Don't be afraid - when you finish with the changes you may simply push your bot to Heroku using `git push heroku master`. Then you should restart your app using `heroku restart`. It will set the webhook again.
 
-### Used Technology and Acknowledgements
+### Used Technology And Acknowledgements
 
-This project was based on [heroku-node-telegram-bot](https://github.com/odditive/heroku-node-telegram-bot). Thanks a lot! That made deploying to heroku a charm, without any setup or configuration <3
+This project was based on [heroku-node-telegram-bot](https://github.com/odditive/heroku-node-telegram-bot). Thanks a lot! That made deploying to heroku a charm, without any setup or configuration 😍
 
-As a platform we use [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api).
-[node-telegram-bot-api documentation](https://github.com/yagop/node-telegram-bot-api/blob/0b8ca03b54ac3361c2f656e2fa23c0e4423e49e5/doc/api.md)
-[Telegram API documentation](https://core.telegram.org/bots/api)
-We also use [node-telegram-keyboard-wrapper](https://github.com/alexandercerutti/node-telegram-keyboard-wrapper.)
+As a platform we use [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api). And [node-telegram-keyboard-wrapper](https://github.com/alexandercerutti/node-telegram-keyboard-wrapper) is used as well.
+- [node-telegram-bot-api documentation](https://github.com/yagop/node-telegram-bot-api/blob/0b8ca03b54ac3361c2f656e2fa23c0e4423e49e5/doc/api.md)
+- [Telegram API documentation](https://core.telegram.org/bots/api)
