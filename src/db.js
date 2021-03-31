@@ -7,8 +7,12 @@ const DESCRIPTION_MAX_LENGTH = 4500;
 class DB {
   constructor() {
     this.db = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: false
+      user: "vqmgpdxxphouko",
+      password: "b9b986d55ddeae32af049bf2c17c17ced3b019f3d541970bfd8131321d9a3ed4",
+      database: "d6ntel0ao3e78o",
+      port: 5432,
+      host: "ec2-174-129-227-205.compute-1.amazonaws.com",
+      ssl: true
     });
   }
 
@@ -39,7 +43,7 @@ message_id bigint,
 description varchar(${DESCRIPTION_MAX_LENGTH})
         );`
       )
-      .then(() => {})
+      .then(() => { })
       .catch(err => {
         console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
         bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
@@ -48,7 +52,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
       .query(
         `CREATE TABLE attendees (event_id varchar(${ID_MAX_LENGTH}), user_id varchar(${ID_MAX_LENGTH}), full_name varchar(${ID_MAX_LENGTH}));`
       )
-      .then(() => {})
+      .then(() => { })
       .catch(err => {
         console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
         bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
@@ -71,7 +75,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
         `INSERT INTO events (event_id, chat_id, message_id, description)
         VALUES ('${event_id}', '${chat_id_int}', '${message_id_int}', '${description}');`
       )
-      .then(() => {})
+      .then(() => { })
       .catch(err => {
         console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
         bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
@@ -94,7 +98,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
       .query(
         `INSERT INTO attendees (event_id, user_id, full_name) VALUES ('${event_id}', '${user_id}', '${sanitized_full_name}');`
       )
-      .then(() => {})
+      .then(() => { })
       .catch(err => {
         console.error(
           `Error while writing RSVP to database: event_id=${event_id}, user_id=${user_id}: ${err}`
@@ -107,7 +111,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
       .query(
         `DELETE FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`
       )
-      .then(() => {})
+      .then(() => { })
       .catch(err => {
         console.error(
           `Error while writing RSVP-Cancellation to database: event_id=${event_id}, user_id=${user_id}: ${err}`
