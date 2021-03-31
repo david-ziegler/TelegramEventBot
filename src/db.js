@@ -127,6 +127,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
   }
 
   async getEvent(event_id) {
+    console.log(`getEvent ${event_id}`);
     return await this.db
       .query(`SELECT * FROM events WHERE event_id='${event_id}';`)
       .then(res => {
@@ -135,6 +136,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
             `getEvent: could not find the event with event_id=${event_id} in the database.`
           );
         }
+        console.log(`result: ${res.rows[0]}`);
         return res.rows[0];
       })
       .catch(err => {

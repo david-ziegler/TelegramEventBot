@@ -39,6 +39,12 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
+
+bot.onText(/^\/debug/, msg => {
+  console.log('debugging command');
+  db.getEvent('117084049_6722');
+});
+
 bot.on("callback_query", query => {
   console.log('callback query', query);
   if (query.data === ACTIONS.RSVP) {
