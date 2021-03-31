@@ -74,6 +74,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
     console.log('d');
     const query = `INSERT INTO events (event_id, chat_id, message_id, description)
     VALUES ('${event_id}', '${chat_id_int}', '${message_id_int}', '${description}');`;
+    console.log('query:', query);
     await this.db
       .query(
         query
@@ -85,6 +86,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
         console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
         bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
       });
+    console.log('done 2');
   }
 
   async rsvpToEvent(event_id, user_id, full_name) {
