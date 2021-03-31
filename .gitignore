@@ -1,5 +1,5 @@
-
 node_modules/*
+.*code-workspace
 
 # Heroku environment configuration
 .env
