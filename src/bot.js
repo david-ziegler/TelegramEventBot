@@ -4,6 +4,8 @@ const i18n = require("./i18n");
 const DB = require("./db");
 const { sanitize } = require("./util");
 
+const VERSION = 1;
+
 const ACTIONS = {
   RSVP: "RSVP",
   CANCEL_RSVP: "CANCEL_RSVP"
@@ -21,7 +23,7 @@ if (process.env.NODE_ENV === "development") {
   bot = new Bot(prodBotToken);
   bot.setWebHook(process.env.HEROKU_URL + prodBotToken);
 }
-console.log("Bot server started in the " + process.env.NODE_ENV + " mode");
+console.log(`Bot server started in the ${process.env.NODE_ENV} mode. Version ${VERSION}`);
 
 const rsvpButtons = new InlineKeyboard();
 rsvpButtons.addRow({
