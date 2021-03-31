@@ -4,7 +4,7 @@ const i18n = require("./i18n");
 const DB = require("./db");
 const { sanitize } = require("./util");
 
-const VERSION = 1;
+const VERSION = 2;
 
 const ACTIONS = {
   RSVP: "RSVP",
@@ -40,7 +40,7 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
 });
 
 bot.on("callback_query", query => {
-  console.log('query', query);
+  console.log('callback query', query);
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
