@@ -49,6 +49,7 @@ bot.on("callback_query", query => {
 });
 
 function createEvent(msg) {
+  console.log('createEvent', msg);
   const event_description = removeBotCommand(msg.text);
   const event_description_valid_length = shortenDescriptionIfTooLong(
     event_description
@@ -61,13 +62,13 @@ function createEvent(msg) {
   const sanitized_event_description_with_author = sanitize(
     event_description_with_author
   );
-
+  console.log('a');
   deleteMessage(msg);
-  bot
-    .sendMessage(msg.chat.id, sanitized_event_description_with_author, {
-      parse_mode: "markdown",
-      ...rsvpButtons.build()
-    })
+  console.log('b');
+  bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, {
+    parse_mode: "markdown",
+    ...rsvpButtons.build()
+  })
     .then(async created_msg => {
       const event_id = createEventIDFromMessage(created_msg);
       await db.insertEvent(

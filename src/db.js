@@ -60,6 +60,7 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
   }
 
   async insertEvent(event_id, chat_id, message_id, description) {
+    console.log('before insert', event_id, chat_id, message_id, description);
     if (event_id.length > ID_MAX_LENGTH) {
       console.error("Error: event_id too long");
       return;
@@ -70,12 +71,16 @@ description varchar(${DESCRIPTION_MAX_LENGTH})
     }
     const chat_id_int = Number.parseInt(chat_id);
     const message_id_int = Number.parseInt(message_id);
+    console.log('d');
+    const query = `INSERT INTO events (event_id, chat_id, message_id, description)
+    VALUES ('${event_id}', '${chat_id_int}', '${message_id_int}', '${description}');`;
     await this.db
       .query(
-        `INSERT INTO events (event_id, chat_id, message_id, description)
-        VALUES ('${event_id}', '${chat_id_int}', '${message_id_int}', '${description}');`
+        query
       )
-      .then(() => { })
+      .then(() => {
+        console.log('done!');
+      })
       .catch(err => {
         console.error(`RSVP: Error while retrieving event ${event_id}: ${err}`);
         bot.answerCallbackQuery(queryID, { text: i18n.errors.generic });
