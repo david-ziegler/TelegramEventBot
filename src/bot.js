@@ -40,6 +40,7 @@ bot.onText(/^\/(E|e)vent.*/, msg => {
 });
 
 bot.on("callback_query", query => {
+  console.log('query', query);
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
@@ -102,9 +103,13 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+  console.log('changeRSVPForUser', user, msg, queryID, cancellingRSVP);
+
   const user_id = user.id.toString();
   const event_id = createEventIDFromMessage(msg);
+  console.log('event_id:', event_id);
   const event = await db.getEvent(event_id);
+  console.log('getEvent', event_id, event);
 
   const rsvpedAlready = await didThisUserRsvpAlready(event_id, user_id);
   if (
@@ -114,14 +119,17 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
     bot.answerCallbackQuery(queryID, { text: "" });
     return;
   }
+  console.log('1');
 
   if (!cancellingRSVP) {
     await db.rsvpToEvent(event_id, user_id, getFullNameString(user));
   } else {
     await db.removeRsvpFromEvent(event_id, user_id);
   }
+  console.log('2');
 
   bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
+    console.log('4');
     const attendees = await db
       .getAttendeesByEventID(event_id)
       .then(res => res)
@@ -134,6 +142,7 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
       event.description,
       attendees
     );
+    console.log('5');
     bot.editMessageText(eventTextWithAttendees, {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
@@ -141,6 +150,7 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
       ...rsvpButtons.build()
     });
   });
+  console.log('3');
 }
 
 async function didThisUserRsvpAlready(event_id, user_id) {
