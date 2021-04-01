@@ -1,4 +1,4 @@
-import * as Bot from 'node-telegram-bot-api';
+import * as TelegramBot from 'node-telegram-bot-api';
 import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
 import { i18n } from './i18n';
 import { DB } from './db';
@@ -15,11 +15,11 @@ const ACTIONS = {
 const db = new DB();
 db.initializeDB().then(() => console.log('Initialized DB'));
 
-export let bot;
+export let bot: TelegramBot;
 if (NODE_ENV === 'development') {
-  bot = new Bot(DEV_BOT_TOKEN, { polling: true });
+  bot = new TelegramBot(DEV_BOT_TOKEN, { polling: true });
 } else {
-  bot = new Bot(PROD_BOT_TOKEN, { polling: true });
+  bot = new TelegramBot(PROD_BOT_TOKEN, { polling: true });
 }
 console.log(`Bot server started in the ${NODE_ENV} mode. Version ${packageInfo.version}`);
 
@@ -55,16 +55,17 @@ function createEvent(msg) {
     event_description_with_author,
   );
   deleteMessage(msg);
-  bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, {
-    parse_mode: 'markdown',
-    ...rsvpButtons.getMarkup(),
-  })
+  const options: TelegramBot.SendMessageOptions = {
+    parse_mode: 'MarkdownV2',
+    reply_markup: rsvpButtons.getMarkup(),
+  };
+  bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, options)
     .then(async created_msg => {
       const event_id = createEventIDFromMessage(created_msg);
       await db.insertEvent(
         event_id,
-        created_msg.chat.id,
-        created_msg.message_id,
+        created_msg.chat.id.toString(),
+        created_msg.message_id.toString(),
         sanitized_event_description_with_author,
       );
     });
@@ -94,7 +95,6 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
-
   const user_id = user.id.toString();
   const event_id = createEventIDFromMessage(msg);
   const event = await db.getEvent(event_id);
@@ -123,12 +123,13 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
         ),
       );
     const eventTextWithAttendees = getEventTextWithAttendees(event.description, attendees);
-    bot.editMessageText(eventTextWithAttendees, {
+    const options: TelegramBot.EditMessageTextOptions = {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
-      parse_mode: 'markdown',
-      ...rsvpButtons.getMarkup(),
-    });
+      parse_mode: 'MarkdownV2',
+      reply_markup: rsvpButtons.getMarkup(),
+    };
+    bot.editMessageText(eventTextWithAttendees, options);
   });
 }
 
