@@ -3,7 +3,9 @@ import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboar
 import { i18n } from './i18n';
 import { DB } from './db';
 import { sanitize } from './util';
-import * as blabla from '../package.json';
+import * as packageInfo from '../package.json';
+
+const { NODE_ENV, DEV_BOT_TOKEN, PROD_BOT_TOKEN } = process.env;
 
 const ACTIONS = {
   RSVP: 'RSVP',
@@ -14,15 +16,12 @@ const db = new DB();
 db.initializeDB().then(() => console.log('Initialized DB'));
 
 export let bot;
-if (process.env.NODE_ENV === 'development') {
-  const devBotToken = process.env.DEV_BOT_TOKEN;
-  bot = new Bot(devBotToken, { polling: true });
+if (NODE_ENV === 'development') {
+  bot = new Bot(DEV_BOT_TOKEN, { polling: true });
 } else {
-  const prodBotToken = process.env.PROD_BOT_TOKEN;
-  bot = new Bot(prodBotToken);
-  bot.setWebHook(process.env.HEROKU_URL + prodBotToken);
+  bot = new Bot(PROD_BOT_TOKEN, { polling: true });
 }
-console.log(`Bot server started in the ${process.env.NODE_ENV} mode. Version ${blabla.version}`);
+console.log(`Bot server started in the ${NODE_ENV} mode. Version ${packageInfo.version}`);
 
 const rsvpButtons = new InlineKeyboard();
 rsvpButtons.push(
