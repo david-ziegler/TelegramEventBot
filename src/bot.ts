@@ -1,21 +1,20 @@
-let Bot = require("node-telegram-bot-api");
-let { InlineKeyboard } = require("node-telegram-keyboard-wrapper");
-const i18n = require("./i18n");
-const DB = require("./db");
-const { sanitize } = require("./util");
-
-const VERSION = 2;
+import * as Bot from 'node-telegram-bot-api';
+import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
+import { i18n } from './i18n';
+import { DB } from './db';
+import { sanitize } from './util';
+import * as blabla from '../package.json';
 
 const ACTIONS = {
-  RSVP: "RSVP",
-  CANCEL_RSVP: "CANCEL_RSVP"
+  RSVP: 'RSVP',
+  CANCEL_RSVP: 'CANCEL_RSVP',
 };
 
-let db = new DB();
-db.initializeDB().then(() => console.log("Initialized DB"));
+const db = new DB();
+db.initializeDB().then(() => console.log('Initialized DB'));
 
-let bot;
-if (process.env.NODE_ENV === "development") {
+export let bot;
+if (process.env.NODE_ENV === 'development') {
   const devBotToken = process.env.DEV_BOT_TOKEN;
   bot = new Bot(devBotToken, { polling: true });
 } else {
@@ -23,30 +22,19 @@ if (process.env.NODE_ENV === "development") {
   bot = new Bot(prodBotToken);
   bot.setWebHook(process.env.HEROKU_URL + prodBotToken);
 }
-console.log(`Bot server started in the ${process.env.NODE_ENV} mode. Version ${VERSION}`);
+console.log(`Bot server started in the ${process.env.NODE_ENV} mode. Version ${blabla.version}`);
 
 const rsvpButtons = new InlineKeyboard();
-rsvpButtons.addRow({
-  text: i18n.buttons.rsvp,
-  callback_data: ACTIONS.RSVP
-});
-rsvpButtons.addRow({
-  text: i18n.buttons.cancel_rsvp,
-  callback_data: ACTIONS.CANCEL_RSVP
-});
+rsvpButtons.push(
+  new Row(new InlineKeyboardButton(i18n.buttons.rsvp, 'callback_data', ACTIONS.RSVP)),
+  new Row(new InlineKeyboardButton(i18n.buttons.cancel_rsvp, 'callback_data', ACTIONS.CANCEL_RSVP)),
+);
 
 bot.onText(/^\/(E|e)vent.*/, msg => {
   createEvent(msg);
 });
 
-
-bot.onText(/^\/debug/, msg => {
-  console.log('debugging command');
-  db.getEvent('117084049_6722');
-});
-
-bot.on("callback_query", query => {
-  console.log('callback query', query);
+bot.on('callback_query', query => {
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
@@ -55,25 +43,22 @@ bot.on("callback_query", query => {
 });
 
 function createEvent(msg) {
-  console.log('createEvent', msg);
   const event_description = removeBotCommand(msg.text);
   const event_description_valid_length = shortenDescriptionIfTooLong(
-    event_description
+    event_description,
   );
   const event_description_with_author = addEventAuthor(
     event_description_valid_length,
-    msg.from
+    msg.from,
   );
 
   const sanitized_event_description_with_author = sanitize(
-    event_description_with_author
+    event_description_with_author,
   );
-  console.log('a');
   deleteMessage(msg);
-  console.log('b');
   bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, {
-    parse_mode: "markdown",
-    ...rsvpButtons.build()
+    parse_mode: 'markdown',
+    ...rsvpButtons.getMarkup(),
   })
     .then(async created_msg => {
       const event_id = createEventIDFromMessage(created_msg);
@@ -81,7 +66,7 @@ function createEvent(msg) {
         event_id,
         created_msg.chat.id,
         created_msg.message_id,
-        sanitized_event_description_with_author
+        sanitized_event_description_with_author,
       );
     });
 }
@@ -89,19 +74,19 @@ function createEvent(msg) {
 function shortenDescriptionIfTooLong(description) {
   const MAX_LENGTH = 3500;
   if (description.length > MAX_LENGTH) {
-    return description.substring(0, 3500) + "...";
+    return description.substring(0, 3500) + '...';
   } else {
     return description;
   }
 }
 
 function removeBotCommand(text) {
-  return text.replace(/^\/(E|e)vent( |\n)?/, "");
+  return text.replace(/^\/(E|e)vent( |\n)?/, '');
 }
 
 function addEventAuthor(text, author) {
   return `${text}\n\n_${i18n.message_content.created_by} ${getFullNameString(
-    author
+    author,
   )}_`;
 }
 
@@ -110,61 +95,46 @@ function deleteMessage(msg) {
 }
 
 async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
-  console.log('changeRSVPForUser', user, msg, queryID, cancellingRSVP);
 
   const user_id = user.id.toString();
   const event_id = createEventIDFromMessage(msg);
-  console.log('event_id:', event_id);
   const event = await db.getEvent(event_id);
-  console.log('getEvent', event_id, event);
 
   const rsvpedAlready = await didThisUserRsvpAlready(event_id, user_id);
   if (
     (cancellingRSVP && !rsvpedAlready) ||
     (!cancellingRSVP && rsvpedAlready)
   ) {
-    bot.answerCallbackQuery(queryID, { text: "" });
+    bot.answerCallbackQuery(queryID, { text: '' });
     return;
   }
-  console.log('1');
 
   if (!cancellingRSVP) {
     await db.rsvpToEvent(event_id, user_id, getFullNameString(user));
   } else {
     await db.removeRsvpFromEvent(event_id, user_id);
   }
-  console.log('2');
 
-  bot.answerCallbackQuery(queryID, { text: "" }).then(async () => {
-    console.log('4');
+  bot.answerCallbackQuery(queryID, { text: '' }).then(async () => {
     const attendees = await db
       .getAttendeesByEventID(event_id)
-      .then(res => res)
-      .catch(err =>
+      .catch(() =>
         console.error(
-          `Error while getting attendees from database: event_id=${event_id}`
-        )
+          `Error while getting attendees from database: event_id=${event_id}`,
+        ),
       );
-    const eventTextWithAttendees = getEventTextWithAttendees(
-      event.description,
-      attendees
-    );
-    console.log('5');
+    const eventTextWithAttendees = getEventTextWithAttendees(event.description, attendees);
     bot.editMessageText(eventTextWithAttendees, {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
-      parse_mode: "markdown",
-      ...rsvpButtons.build()
+      parse_mode: 'markdown',
+      ...rsvpButtons.getMarkup(),
     });
   });
-  console.log('3');
 }
 
 async function didThisUserRsvpAlready(event_id, user_id) {
-  const events_attended_to = await db.getAttendeeByEventIDAndUserID(
-    event_id,
-    user_id
-  );
+  const events_attended_to = await db.getAttendeesByEventIDAndUserID(event_id, user_id);
   return events_attended_to.length > 0;
 }
 
@@ -174,7 +144,7 @@ function getFullNameString(user) {
   }
   return [sanitize(user.first_name), sanitize(user.last_name)]
     .filter(namePart => namePartIsPresent(namePart))
-    .join(" ");
+    .join(' ');
 }
 
 function namePartIsPresent(namePart) {
@@ -189,8 +159,7 @@ function getEventTextWithAttendees(description, attendees) {
   return `${description}\n\n*${i18n.message_content.rsvps}:*${attendees.reduce(
     (attendeesString, attendeeRow) =>
       `${attendeesString}\n${attendeeRow.full_name}`,
-    ""
+    '',
   )}`;
 }
 
-module.exports = bot;
