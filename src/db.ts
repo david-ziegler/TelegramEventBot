@@ -1,5 +1,4 @@
 import { Client } from 'pg';
-import { sanitize } from './util';
 import { Attendee, Event } from './models';
 
 const ID_MAX_LENGTH = 100;

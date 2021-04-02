@@ -1,66 +1,40 @@
-import * as TelegramBot from 'node-telegram-bot-api';
-import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
-import { i18n } from './i18n';
-import { DB } from './db';
-import { sanitize } from './util';
-import * as packageInfo from '../package.json';
 
-const { NODE_ENV, DEV_BOT_TOKEN, PROD_BOT_TOKEN } = process.env;
+import { CallbackQuery, EditMessageTextOptions, Message, SendMessageOptions, User } from 'node-telegram-bot-api';
+import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
+import { addEventAuthor, createEventIDFromMessage, getEventTextWithAttendees, getFullNameString, removeBotCommand, sanitize, shortenDescriptionIfTooLong } from './bot-util';
+import { i18n } from './i18n';
+import { bot, db } from './stuff/start-bot';
 
 const ACTIONS = {
   RSVP: 'RSVP',
   CANCEL_RSVP: 'CANCEL_RSVP',
 };
 
-const db = new DB();
-db.initializeDB().then(() => console.log('Initialized DB'));
-
-export let bot: TelegramBot;
-if (NODE_ENV === 'development') {
-  bot = new TelegramBot(DEV_BOT_TOKEN, { polling: true });
-} else {
-  bot = new TelegramBot(PROD_BOT_TOKEN, { polling: true });
-}
-console.log(`Bot server started in the ${NODE_ENV} mode. Version ${packageInfo.version}`);
-
-const rsvpButtons = new InlineKeyboard();
+export const rsvpButtons = new InlineKeyboard();
 rsvpButtons.push(
   new Row(new InlineKeyboardButton(i18n.buttons.rsvp, 'callback_data', ACTIONS.RSVP)),
   new Row(new InlineKeyboardButton(i18n.buttons.cancel_rsvp, 'callback_data', ACTIONS.CANCEL_RSVP)),
 );
 
-bot.onText(/^\/(E|e)vent.*/, msg => {
+bot.onText(/^\/(E|e)vent.*/, (msg: Message) => {
   createEvent(msg);
 });
 
-bot.on('callback_query', query => {
-  if (query.data === ACTIONS.RSVP) {
-    changeRSVPForUser(query.from, query.message, query.id, false);
-  } else {
-    changeRSVPForUser(query.from, query.message, query.id, true);
-  }
-});
-
-function createEvent(msg) {
+function createEvent(msg: Message): void {
   const event_description = removeBotCommand(msg.text);
   const event_description_valid_length = shortenDescriptionIfTooLong(
     event_description,
   );
-  const event_description_with_author = addEventAuthor(
-    event_description_valid_length,
-    msg.from,
-  );
+  const event_description_with_author = addEventAuthor(event_description_valid_length, msg.from);
 
-  const sanitized_event_description_with_author = sanitize(
-    event_description_with_author,
-  );
+  const sanitized_event_description_with_author = sanitize(event_description_with_author);
   deleteMessage(msg);
-  const options: TelegramBot.SendMessageOptions = {
+  const options: SendMessageOptions = {
     parse_mode: 'MarkdownV2',
     reply_markup: rsvpButtons.getMarkup(),
   };
   bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, options)
-    .then(async created_msg => {
+    .then(async (created_msg: Message) => {
       const event_id = createEventIDFromMessage(created_msg);
       await db.insertEvent(
         event_id,
@@ -71,30 +45,19 @@ function createEvent(msg) {
     });
 }
 
-function shortenDescriptionIfTooLong(description) {
-  const MAX_LENGTH = 3500;
-  if (description.length > MAX_LENGTH) {
-    return description.substring(0, 3500) + '...';
+function deleteMessage(msg: Message): void {
+  bot.deleteMessage(msg.chat.id, msg.message_id.toString());
+}
+
+bot.on('callback_query', (query: CallbackQuery) => {
+  if (query.data === ACTIONS.RSVP) {
+    changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
-    return description;
+    changeRSVPForUser(query.from, query.message, query.id, true);
   }
-}
+});
 
-function removeBotCommand(text) {
-  return text.replace(/^\/(E|e)vent( |\n)?/, '');
-}
-
-function addEventAuthor(text, author) {
-  return `${text}\n\n_${i18n.message_content.created_by} ${getFullNameString(
-    author,
-  )}_`;
-}
-
-function deleteMessage(msg) {
-  bot.deleteMessage(msg.chat.id, msg.message_id);
-}
-
-async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
+async function changeRSVPForUser(user: User, msg: Message, queryID: string, cancellingRSVP: boolean) {
   const user_id = user.id.toString();
   const event_id = createEventIDFromMessage(msg);
   const event = await db.getEvent(event_id);
@@ -115,15 +78,9 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   }
 
   bot.answerCallbackQuery(queryID, { text: '' }).then(async () => {
-    const attendees = await db
-      .getAttendeesByEventID(event_id)
-      .catch(() =>
-        console.error(
-          `Error while getting attendees from database: event_id=${event_id}`,
-        ),
-      );
+    const attendees = await db.getAttendeesByEventID(event_id);
     const eventTextWithAttendees = getEventTextWithAttendees(event.description, attendees);
-    const options: TelegramBot.EditMessageTextOptions = {
+    const options: EditMessageTextOptions = {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
       parse_mode: 'MarkdownV2',
@@ -133,33 +90,7 @@ async function changeRSVPForUser(user, msg, queryID, cancellingRSVP) {
   });
 }
 
-async function didThisUserRsvpAlready(event_id, user_id) {
+export async function didThisUserRsvpAlready(event_id: string, user_id: string): Promise<boolean> {
   const events_attended_to = await db.getAttendeesByEventIDAndUserID(event_id, user_id);
   return events_attended_to.length > 0;
 }
-
-function getFullNameString(user) {
-  if (!user.first_name && !user.last_name) {
-    return sanitize(user.username);
-  }
-  return [sanitize(user.first_name), sanitize(user.last_name)]
-    .filter(namePart => namePartIsPresent(namePart))
-    .join(' ');
-}
-
-function namePartIsPresent(namePart) {
-  return !!namePart;
-}
-
-function createEventIDFromMessage(msg) {
-  return `${msg.chat.id}_${msg.message_id}`;
-}
-
-function getEventTextWithAttendees(description, attendees) {
-  return `${description}\n\n*${i18n.message_content.rsvps}:*${attendees.reduce(
-    (attendeesString, attendeeRow) =>
-      `${attendeesString}\n${attendeeRow.full_name}`,
-    '',
-  )}`;
-}
-
