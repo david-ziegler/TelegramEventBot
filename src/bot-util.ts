@@ -32,8 +32,8 @@ export function getEventTextWithAttendees(description: string, attendees: Attend
 }
 
 export function sanitize(original: string): string {
-  if (!original) {
-    return;
+  if (original === '') {
+    return '';
   }
   const unwantedCharacters = ['_', '*', '[', ']'];
   return unwantedCharacters.reduce((original, character) => {
@@ -67,13 +67,13 @@ function isOdd(number: number): boolean {
 
 export function getFullNameString(user: User): string {
   if (!user.first_name && !user.last_name) {
+    if (user.username === undefined) {
+      throw new Error(`User doesn't have a first_name, last_name or username: ${user}`);
+    }
     return sanitize(user.username);
   }
-  return [sanitize(user.first_name), sanitize(user.last_name)]
-    .filter(namePart => namePartIsPresent(namePart))
-    .join(' ');
-}
-
-function namePartIsPresent(namePart: string) {
-  return !!namePart;
+  if (user.last_name === undefined) {
+    return sanitize(user.first_name);
+  }
+  return `${sanitize(user.first_name)} ${sanitize(user.last_name)}`;
 }

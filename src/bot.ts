@@ -1,14 +1,26 @@
 
+import packageInfo from '../package.json';
+import TelegramBot from 'node-telegram-bot-api';
 import { CallbackQuery, EditMessageTextOptions, Message, SendMessageOptions, User } from 'node-telegram-bot-api';
 import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
 import { addEventAuthor, createEventIDFromMessage, getEventTextWithAttendees, getFullNameString, removeBotCommand, sanitize, shortenDescriptionIfTooLong } from './bot-util';
 import { i18n } from './i18n';
-import { bot, db } from './stuff/start-bot';
+import { db } from './stuff/start-db';
 
 const ACTIONS = {
   RSVP: 'RSVP',
   CANCEL_RSVP: 'CANCEL_RSVP',
 };
+
+const { NODE_ENV, DEV_BOT_TOKEN, PROD_BOT_TOKEN } = process.env;
+if (DEV_BOT_TOKEN === undefined || PROD_BOT_TOKEN === undefined) {
+  throw new Error('Environment variable "DEV_BOT_TOKEN" or "PROD_BOT_TOKEN" is not set.');
+}
+const production_mode = Boolean(NODE_ENV === 'production');
+const bot_token = production_mode ? PROD_BOT_TOKEN : DEV_BOT_TOKEN;
+
+export const bot = new TelegramBot(bot_token, { polling: true });
+console.log(`Bot server started in the ${NODE_ENV} mode. Version ${packageInfo.version}`);
 
 export const rsvpButtons = new InlineKeyboard();
 rsvpButtons.push(
@@ -21,6 +33,9 @@ bot.onText(/^\/(E|e)vent.*/, (msg: Message) => {
 });
 
 function createEvent(msg: Message): void {
+  if (msg.text === undefined || msg.from === undefined) {
+    throw new Error(`Tried to create an event with an empty message-text. Message: ${msg}`);
+  }
   const event_description = removeBotCommand(msg.text);
   const event_description_valid_length = shortenDescriptionIfTooLong(
     event_description,
@@ -50,6 +65,9 @@ function deleteMessage(msg: Message): void {
 }
 
 bot.on('callback_query', (query: CallbackQuery) => {
+  if (query.message === undefined) {
+    throw new Error(`Tried to change RSVP-status, but query doesn't have a message object. Query: ${query}`);
+  }
   if (query.data === ACTIONS.RSVP) {
     changeRSVPForUser(query.from, query.message, query.id, false);
   } else {
