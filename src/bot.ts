@@ -30,16 +30,16 @@ rsvpButtons.push(
   new Row(new InlineKeyboardButton(i18n.buttons.cancel_rsvp, 'callback_data', ACTIONS.CANCEL_RSVP)),
 );
 
-bot.onText(/^\/(E|e)vent.*/, (msg: Message) => {
-  createEvent(msg);
+bot.onText(/^\/(E|e)vent.*/, async (msg: Message) => {
+  await createEvent(msg);
 });
 
 bot.onText(/^\/get/, async () => {
   const events = await db.getAllEvents();
-  console.log('returned:', events)
+  console.log('returned:', events);
 });
 
-function createEvent(msg: Message): void {
+async function createEvent(msg: Message): Promise<void> {
   if (msg.text === undefined || msg.from === undefined) {
     throw new Error(`Tried to create an event with an empty message-text. Message: ${msg}`);
   }
@@ -55,14 +55,8 @@ function createEvent(msg: Message): void {
     parse_mode: 'MarkdownV2',
     reply_markup: rsvpButtons.getMarkup(),
   };
-  bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, options)
-    .then(async (created_msg: Message) => {
-      await db.insertEvent(
-        created_msg.chat.id,
-        created_msg.message_id,
-        sanitized_event_description_with_author,
-      );
-    });
+  const created_msg = await bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, options);
+  await db.insertEvent(created_msg.chat.id, created_msg.message_id, sanitized_event_description_with_author);
 }
 
 function deleteMessage(msg: Message): void {

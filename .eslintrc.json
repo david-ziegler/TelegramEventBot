@@ -56,7 +56,6 @@
     "comma-dangle": [
       "warn",
       "always-multiline"
-    ],
-    "require-await": "warn"
+    ]
   }
 }

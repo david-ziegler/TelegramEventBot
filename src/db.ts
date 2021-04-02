@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Database } from 'sqlite3';
-import { Event } from './models';
+import { all, get, run } from './stuff/db-helper';
 import { ENV } from './stuff/helper';
 
 // const ID_MAX_LENGTH = 100;
@@ -15,40 +15,19 @@ export class DB {
   }
 
   public async getAllEvents(): Promise<unknown[]> {
-    return await this.all(`SELECT * FROM events;`);
+    return await all(this.db, `SELECT * FROM events;`);
   }
 
   public async getEvent(chat_id: number, message_id: number): Promise<unknown> {
-    return await this.db.get(`SELECT * FROM events WHERE chat_id=? AND message_id=?`, [chat_id, message_id]);
+    return await get(this.db, `SELECT * FROM events WHERE chat_id=? AND message_id=?`, [chat_id, message_id]);
   }
 
   public async insertEvent(chat_id: number, message_id: number, description: string): Promise<void> {
     if (description.length > DESCRIPTION_MAX_LENGTH) {
       throw new Error(`Description too long. Maximum length: ${DESCRIPTION_MAX_LENGTH} characters.`);
     }
-    console.log('insert', chat_id, message_id, description);
-    this.db.run('INSERT INTO events (chat_id, message_id, description) VALUES (?,?,?)',
-      [chat_id, message_id, description],
-      () => {
-        console.log('inserted event');
-      },
-    );
-  }
-
-  private all(query: string, params?: string[]): Promise<unknown[]> {
-    return new Promise((resolve, reject) => {
-      if (params == undefined) {
-        params = [];
-      }
-      this.db.all(query, params, function (err, rows) {
-        if (err) {
-          reject('Error: ' + err.message);
-        }
-        else {
-          resolve(rows);
-        }
-      });
-    });
+    await run(this.db, 'INSERT INTO events (chat_id, message_id, description) VALUES (?,?,?)', [chat_id, message_id, description]);
+    console.log('inserted event');
   }
 
   //   public async rsvpToEvent(event_id: string, user_id: string, full_name: string): Promise<void> {
