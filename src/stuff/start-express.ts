@@ -3,16 +3,12 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import packageInfo from '../../package.json';
+import { ENV } from './helper';
 
 const app = express();
-const ENV_PORT = process.env.PORT;
-const HOST = process.env.HOST;
-if (ENV_PORT === undefined || HOST === undefined) {
-  throw new Error(`Environment variable "PORT" or "HOST" is not set.`);
-}
-const PORT = parseInt(ENV_PORT);
-app.listen(PORT, HOST, () => {
-  console.log(`Web server started at http://${HOST}:${PORT}`);
+const PORT = parseInt(ENV.PORT);
+app.listen(PORT, ENV.HOST, () => {
+  console.log(`Web server started at http://${ENV.HOST}:${PORT}`);
 });
 
 app.use(bodyParser.json());
