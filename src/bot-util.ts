@@ -35,18 +35,18 @@ export function sanitize(original: string): string {
   if (original === '') {
     return '';
   }
-  const unwantedCharacters = ['_', '*', '[', ']'];
-  return unwantedCharacters.reduce((original, character) => {
-    return removeOddNumberOfCertainCharacter(original, character);
+  const unwantedCharacters = ['_', '*', '[', ']', '__', '~', '`', '```', '{', '}'];
+  const sanitized = unwantedCharacters.reduce((original, character) => {
+    return escapeIfOddNumberOfThisCharacter(original, character);
   }, original);
+  return sanitized;
 }
 
-function removeOddNumberOfCertainCharacter(original: string, unwantedCharacter: string) {
+function escapeIfOddNumberOfThisCharacter(original: string, unwantedCharacter: string) {
   // make sure the string doesn't contain an uneven number of "_"
   // An even number can be correctly parsed as markdown
-  const replaceBy = ' ';
   if (isOdd(numberOfOccurrences(original, unwantedCharacter))) {
-    return original.replace(unwantedCharacter, replaceBy);
+    return original.replace(unwantedCharacter, `\\${unwantedCharacter}`);
   }
 
   return original;
