@@ -45,7 +45,7 @@ Now the bot is started in watch-mode, i.e. whenever you make changes to the code
 
 Follow the steps under "Local development"
 
-(You may also create two different bots and use one token for local development (`DEV_BOT_TOKEN`) and one for production (the deployed bot) (`PROD_BOT_TOKEN`)).
+You might find it useful to create two different bots, one for local development and one for production (for the outside world). In that case, create another bot with BotFather and paste the respective token into the `.env`-file under `PROD_BOT_TOKEN`.
 
 For deployment I found [uberspace](https://uberspace.de/) really nice.
 
