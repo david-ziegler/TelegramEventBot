@@ -32,49 +32,27 @@ Currently, you can't edit or delete events. If you are a developer, Pull Request
 
 ### Local development
 
-Clone this repository and make any code changess to `bot.js`. In the terminal, go to the app's folder with `cd createEventsBot` and run
+1. Clone this repository. 
+2. In order to be able to send and receive message via Telegram you first need to create a bot: [Create a bot with botfather](https://core.telegram.org/bots#3-how-do-i-create-a-bot). There you get a token.
+3. In the terminal, go to the app's folder with `cd createEventsBot`.
+4. Create a database by running `yarn install` and then `npx sqlite3 ./data/development.db`.
+3. Rename the file `.env_example` to `.env` and set `DEV_BOT_TOKEN` to the token, you've got from BotFather. 
+4. Then run `yarn watch`.
 
-```
-npm install
-npm run start
-```
-
-Now you can open Telegram (on the computer or phone) and use the bot (like in "How to create an event"). Whenever you make changes to the code and you want to try them in Telegram, you need to run `npm run start` again.
-
-Troubleshooting: if `npm install` doesn't work you might want to try `sudo npm install`.
+Now the bot is started in watch-mode, i.e. whenever you make changes to the code and save them, the bot automatically updates. You can now open Telegram (on the computer or phone) and use the bot (like in "How to create an event"). 
 
 ### Create your own bot with your changes
 
-1. Follow the steps under "Local development"
-2. Create a new bot with [BotFather](https://core.telegram.org/bots#3-how-do-i-create-a-bot) and grab your TOKEN.
-3. Rename `.env_example` file into `.env` and set `DEV_BOT_TOKEN` to the token, you've got from BotFather.
-   (You may also create two different bots and use one token for local development (`DEV_BOT_TOKEN`) and one for production (the deployed bot) (`PROD_BOT_TOKEN`)).
+Follow the steps under "Local development"
 
-### Deploy your bot to the Heroku server
+(You may also create two different bots and use one token for local development (`DEV_BOT_TOKEN`) and one for production (the deployed bot) (`PROD_BOT_TOKEN`)).
 
-1. Create a [Heroku account](https://heroku.com) and install the [Heroku Toolbelt](https://toolbelt.heroku.com/).
-2. Login to your Heroku account using `heroku login` in the terminal.
-3. Go to the `createEventsBot` folder.
-4. Run `heroku create` to prepare the Heroku environment.
-5. Configure environment variables on the server: Run `heroku config:set PROD_BOT_TOKEN=your-token` (replacing `your-token` with the token you got from Botfather. In case you created two bots, use the token from the bot that you would like to use in production here. The development-bot token is set in .env.).
-6. Run `heroku config:set HEROKU_URL=$(heroku info -s | grep web_url | cut -d= -f2)`.
-7. Run `git add -A && git commit -m "Ready to run on heroku" && git push heroku master` to deploy your bot to the Heroku server.
-8. Send `/event blabla` to the bot to check out if it works ok. Now you don't need to run `npm run start` locally anymore since the Heroku server is doing that.
-9. Whenever you made changes to the code, push them to Heroku again to deploy them.
+For deployment I found [uberspace](https://uberspace.de/) really nice.
 
-Also feel free to make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
+Also, feel free to make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
 
-### More details for developers
+### Used technology & acknowledgements
 
-In development mode the bot works using [polling](https://en.wikipedia.org/wiki/Push_technology#Long_polling) and on the Heroku server it uses [webhooks](https://core.telegram.org/bots/api#setwebhook), because Heroku will shut down the web-server after a period of inactivity that will result in your polling loop to shut down too. Once webhook was enabled, telegram will return an error `{"ok":false,"error_code":409,"description":"Error: Conflict: another webhook is active"}` when you will try to use polling again, and that's actually ok.
+We use [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api), [node-telegram-keyboard-wrapper](https://github.com/alexandercerutti/node-telegram-keyboard-wrapper) and [sqlite3](https://github.com/mapbox/node-sqlite3).
 
-To go back to development mode, `https://api.telegram.org/botYOUR_TOKEN/setWebhook?url=` in your browser (replacing `YOUR_TOKEN` with the token, you've got from the BotFather). Or if you are on Linux you can instead run `npm run switch_to_dev`.
-Don't be afraid - when you finish with the changes you may simply push your bot to Heroku using `git push heroku master`. Then you should restart your app using `heroku restart`. It will set the webhook again.
-
-### Used technology and acknowledgements
-
-This project was based on [heroku-node-telegram-bot](https://github.com/odditive/heroku-node-telegram-bot). Thanks a lot! That made deploying to heroku a charm, without any setup or configuration 😍
-
-As a platform we use [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api). And [node-telegram-keyboard-wrapper](https://github.com/alexandercerutti/node-telegram-keyboard-wrapper) is used as well.
-- [node-telegram-bot-api documentation](https://github.com/yagop/node-telegram-bot-api/blob/0b8ca03b54ac3361c2f656e2fa23c0e4423e49e5/doc/api.md)
-- [Telegram API documentation](https://core.telegram.org/bots/api)
+You may find these documentations useful: [node-telegram-bot-api documentation](https://github.com/yagop/node-telegram-bot-api/blob/0b8ca03b54ac3361c2f656e2fa23c0e4423e49e5/doc/api.md), [Telegram API documentation](https://core.telegram.org/bots/api).
