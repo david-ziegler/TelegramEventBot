@@ -1,4 +1,5 @@
 node_modules/*
 .*code-workspace
 .env
+.env_production
 data/*.db
