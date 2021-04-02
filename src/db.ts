@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Database } from 'sqlite3';
+import { sanitize } from './bot-util';
+import { Attendee, Event } from './models';
 import { all, get, run } from './stuff/db-helper';
 import { ENV } from './stuff/helper';
 
-// const ID_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 4500;
 
 export class DB {
@@ -14,12 +14,12 @@ export class DB {
     console.log(`Initialized DB ${ENV.DATABASE_PATH}`);
   }
 
-  public async getAllEvents(): Promise<unknown[]> {
-    return await all(this.db, `SELECT * FROM events;`);
+  public async getAllEvents(): Promise<Event[]> {
+    return await all<Event>(this.db, 'SELECT * FROM events');
   }
 
-  public async getEvent(chat_id: number, message_id: number): Promise<unknown> {
-    return await get(this.db, `SELECT * FROM events WHERE chat_id=? AND message_id=?`, [chat_id, message_id]);
+  public async getEvent(chat_id: number, message_id: number): Promise<Event> {
+    return await get<Event>(this.db, 'SELECT * FROM events WHERE chat_id=? AND message_id=?', [chat_id, message_id]);
   }
 
   public async insertEvent(chat_id: number, message_id: number, description: string): Promise<void> {
@@ -27,62 +27,31 @@ export class DB {
       throw new Error(`Description too long. Maximum length: ${DESCRIPTION_MAX_LENGTH} characters.`);
     }
     await run(this.db, 'INSERT INTO events (chat_id, message_id, description) VALUES (?,?,?)', [chat_id, message_id, description]);
-    console.log('inserted event');
   }
 
-  //   public async rsvpToEvent(event_id: string, user_id: string, full_name: string): Promise<void> {
-  //     if (
-  //       event_id.length > ID_MAX_LENGTH ||
-  //       user_id.length > ID_MAX_LENGTH ||
-  //       full_name.length > ID_MAX_LENGTH
-  //     ) {
-  //       console.error('Error: event_id, user_id or full_name too long');
-  //       return;
-  //     }
+  public async rsvpToEvent(event_id: number, user_id: number, name: string): Promise<void> {
+    const sanitized_full_name = sanitize(name);
+    await run(this.db, 'INSERT INTO attendees (event_id, user_id, name) VALUES (?, ?, ?)', [event_id, user_id, sanitized_full_name]);
+  }
 
-  //     const sanitized_full_name = sanitize(full_name);
+  public async removeRsvpFromEvent(event_id: number, user_id: number): Promise<void> {
+    await run(this.db, 'DELETE FROM attendees WHERE event_id=? AND user_id=?', [event_id, user_id]);
+  }
 
-  //     // await this.db.query(`INSERT INTO attendees (event_id, user_id, full_name) VALUES ('${event_id}', '${user_id}', '${sanitized_full_name}');`)
-  //     //   .catch((err: Error) => {
-  //     //     console.error(
-  //     //       `Error while writing RSVP to database: event_id=${event_id}, user_id=${user_id}: ${err}`,
-  //     //   );
-  //     // });
-  //   }
+  public async didThisUserRsvpAlready(chat_id: number, message_id: number, user_id: number): Promise<boolean> {
+    const attendances = await this.getAttendeesForEventAndUser(chat_id, message_id, user_id);
+    return attendances.length > 0;
+  }
 
-  //   public async removeRsvpFromEvent(event_id: string, user_id: string): Promise<void> {
-  //     // await this.db.query(`DELETE FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`)
-  //     //   .catch((err: Error) => {
-  //     //     console.error(
-  //     // //       `Error while writing RSVP-Cancellation to database: event_id=${event_id}, user_id=${user_id}: ${err}`,
-  //     //     );
-  //     //   });
-  //   }
+  private async getAttendeesForEventAndUser(chat_id: number, message_id: number, user_id: number): Promise<Attendee[]> {
+    return await all<Attendee>(this.db, 'SELECT * FROM attendees JOIN events ON attendees.event_id = events.id WHERE chat_id=? AND message_id=? AND user_id=?',
+      [chat_id, message_id, user_id],
+    );
+  }
 
-  //   public async getAttendeesByEventIDAndUserID(event_id: string, user_id: string): Promise<Attendee[]> {
-  //     // return await this.db.query(`SELECT * FROM attendees WHERE event_id='${event_id}' AND user_id='${user_id}';`)
-  //     //   .then((res: any) => {
-  //     //     return res.rows;
-  //     //   })
-  //     // .catch((err: Error) => {
-  //     //   console.error('Error in getAttendeeByEventIDAndUserID():', err);
-  //     // });
-  //     return new Promise(() => {
-  //       console.log('bla');
-  //     });
-  //   }
-
-  //   public async getAttendeesByEventID(event_id: string): Promise<Attendee[]> {
-  //     // return await this.db.query(`SELECT * FROM attendees WHERE event_id='${event_id}';`)
-  //     //   .then((res: any) => {
-  //     //     return res.rows;
-  //     //   })
-  //     // .catch((err: Error) => {
-  //     //   console.error('Error in getAttendeesByEventID():', err);
-  //     // });
-  //     return new Promise(() => {
-  //       console.log('bla');
-  //     });
-  //   }
-
+  public async getAttendeesForEvent(chat_id: number, message_id: number): Promise<Attendee[]> {
+    return await all<Attendee>(this.db, 'SELECT * FROM attendees JOIN events ON attendees.event_id = events.id WHERE chat_id=? AND message_id=?',
+      [chat_id, message_id],
+    );
+  }
 }

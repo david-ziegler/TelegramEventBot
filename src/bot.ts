@@ -1,11 +1,10 @@
 
-import packageInfo from '../package.json';
-import TelegramBot from 'node-telegram-bot-api';
-import { CallbackQuery, EditMessageTextOptions, Message, SendMessageOptions, User } from 'node-telegram-bot-api';
+import TelegramBot, { CallbackQuery, EditMessageTextOptions, Message, SendMessageOptions, User } from 'node-telegram-bot-api';
 import { InlineKeyboard, InlineKeyboardButton, Row } from 'node-telegram-keyboard-wrapper';
-import { addEventAuthor, createEventIDFromMessage, getEventTextWithAttendees, getFullNameString, removeBotCommand, sanitize, shortenDescriptionIfTooLong } from './bot-util';
-import { i18n } from './i18n';
+import packageInfo from '../package.json';
+import { addEventAuthor, deleteMessage, getEventTextWithAttendees, getFullNameString, removeBotCommand, sanitize, shortenDescriptionIfTooLong } from './bot-util';
 import { DB } from './db';
+import { i18n } from './i18n';
 
 const db = new DB();
 
@@ -34,33 +33,21 @@ bot.onText(/^\/(E|e)vent.*/, async (msg: Message) => {
   await createEvent(msg);
 });
 
-bot.onText(/^\/get/, async () => {
-  const events = await db.getAllEvents();
-  console.log('returned:', events);
-});
-
 async function createEvent(msg: Message): Promise<void> {
   if (msg.text === undefined || msg.from === undefined) {
     throw new Error(`Tried to create an event with an empty message-text. Message: ${msg}`);
   }
   const event_description = removeBotCommand(msg.text);
-  const event_description_valid_length = shortenDescriptionIfTooLong(
-    event_description,
-  );
+  const event_description_valid_length = shortenDescriptionIfTooLong(event_description);
   const event_description_with_author = addEventAuthor(event_description_valid_length, msg.from);
-
   const sanitized_event_description_with_author = sanitize(event_description_with_author);
-  deleteMessage(msg);
+  deleteMessage(bot, msg);
   const options: SendMessageOptions = {
     parse_mode: 'MarkdownV2',
     reply_markup: rsvpButtons.getMarkup(),
   };
   const created_msg = await bot.sendMessage(msg.chat.id, sanitized_event_description_with_author, options);
   await db.insertEvent(created_msg.chat.id, created_msg.message_id, sanitized_event_description_with_author);
-}
-
-function deleteMessage(msg: Message): void {
-  bot.deleteMessage(msg.chat.id, msg.message_id.toString());
 }
 
 bot.on('callback_query', (query: CallbackQuery) => {
@@ -75,39 +62,35 @@ bot.on('callback_query', (query: CallbackQuery) => {
 });
 
 async function changeRSVPForUser(user: User, msg: Message, queryID: string, cancellingRSVP: boolean) {
-  // const user_id = user.id.toString();
-  const event = await db.getEvent(msg.chat.id, msg.message_id);
-  console.log('returned:', event);
+  const rsvpedAlready = await db.didThisUserRsvpAlready(msg.chat.id, msg.message_id, user.id);
+  if (
+    (cancellingRSVP && !rsvpedAlready) ||
+    (!cancellingRSVP && rsvpedAlready)
+  ) {
+    bot.answerCallbackQuery(queryID, { text: '' });
+    return;
+  }
+  const chat_id = msg.chat.id;
+  const { message_id } = msg;
+  const event = await db.getEvent(chat_id, message_id);
+  if (event === undefined) {
+    throw new Error(`Event could not be found in the database: chat_id=${chat_id}, message_id=${message_id}`);
+  }
+  if (!cancellingRSVP) {
+    await db.rsvpToEvent(event.id, user.id, getFullNameString(user));
+  } else {
+    await db.removeRsvpFromEvent(event.id, user.id);
+  }
 
-  // const rsvpedAlready = await didThisUserRsvpAlready(event_id, user_id);
-  // if (
-  //   (cancellingRSVP && !rsvpedAlready) ||
-  //   (!cancellingRSVP && rsvpedAlready)
-  // ) {
-  //   bot.answerCallbackQuery(queryID, { text: '' });
-  //   return;
-  // }
-
-  // if (!cancellingRSVP) {
-  //   await db.rsvpToEvent(event_id, user_id, getFullNameString(user));
-  // } else {
-  //   await db.removeRsvpFromEvent(event_id, user_id);
-  // }
-
-  // bot.answerCallbackQuery(queryID, { text: '' }).then(async () => {
-  //   const attendees = await db.getAttendeesByEventID(event_id);
-  //   const eventTextWithAttendees = getEventTextWithAttendees(event.description, attendees);
-  //   const options: EditMessageTextOptions = {
-  //     chat_id: msg.chat.id,
-  //     message_id: msg.message_id,
-  //     parse_mode: 'MarkdownV2',
-  //     reply_markup: rsvpButtons.getMarkup(),
-  //   };
-  //   bot.editMessageText(eventTextWithAttendees, options);
-  // });
+  bot.answerCallbackQuery(queryID, { text: '' }).then(async () => {
+    const attendees = await db.getAttendeesForEvent(chat_id, message_id);
+    const eventTextWithAttendees = getEventTextWithAttendees(event.description, attendees);
+    const options: EditMessageTextOptions = {
+      chat_id: msg.chat.id,
+      message_id: msg.message_id,
+      parse_mode: 'MarkdownV2',
+      reply_markup: rsvpButtons.getMarkup(),
+    };
+    bot.editMessageText(eventTextWithAttendees, options);
+  });
 }
-
-// export async function didThisUserRsvpAlready(event_id: string, user_id: string): Promise<boolean> {
-//   const events_attended_to = await db.getAttendeesByEventIDAndUserID(event_id, user_id);
-//   return events_attended_to.length > 0;
-// }

@@ -1,11 +1,12 @@
 export interface Attendee {
-  event_id: string;
+  id: number;
+  event_id: number;
   user_id: string;
-  full_name: string;
+  name: string;
 }
 
 export interface Event {
-  event_id: string;
+  id: number;
   chat_id: number;
   message_id: number;
   description: string;

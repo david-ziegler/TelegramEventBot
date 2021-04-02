@@ -1,6 +1,6 @@
 import { Database } from 'sqlite3';
 
-export function all(db: Database, query: string, params?: string[]): Promise<unknown[]> {
+export function all<Result>(db: Database, query: string, params?: Param[]): Promise<Result[]> {
   return new Promise((resolve, reject) => {
     if (params == undefined) {
       params = [];
@@ -16,7 +16,7 @@ export function all(db: Database, query: string, params?: string[]): Promise<unk
   });
 }
 
-export function get(db: Database, query: string, params?: Param[]): Promise<unknown[]> {
+export function get<Result>(db: Database, query: string, params?: Param[]): Promise<Result> {
   return new Promise((resolve, reject) => {
     if (params == undefined) {
       params = [];

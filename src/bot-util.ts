@@ -1,4 +1,4 @@
-import { Message, User } from 'node-telegram-bot-api';
+import TelegramBot, { Message, User } from 'node-telegram-bot-api';
 import { i18n } from './i18n';
 import { Attendee } from './models';
 
@@ -26,7 +26,7 @@ export function createEventIDFromMessage(msg: Message): string {
 export function getEventTextWithAttendees(description: string, attendees: Attendee[]): string {
   return `${description}\n\n*${i18n.message_content.rsvps}:*${attendees.reduce(
     (attendeesString, attendeeRow) =>
-      `${attendeesString}\n${attendeeRow.full_name}`,
+      `${attendeesString}\n${attendeeRow.name}`,
     '',
   )}`;
 }
@@ -76,4 +76,8 @@ export function getFullNameString(user: User): string {
     return sanitize(user.first_name);
   }
   return `${sanitize(user.first_name)} ${sanitize(user.last_name)}`;
+}
+
+export function deleteMessage(bot: TelegramBot, msg: Message): void {
+  bot.deleteMessage(msg.chat.id, msg.message_id.toString());
 }
