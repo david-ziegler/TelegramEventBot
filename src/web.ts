@@ -11,10 +11,10 @@ app.get('/', function (req, res) {
   res.json({ version: packageInfo.version });
 });
 
-const server = app.listen(process.env.PORT, '0.0.0.0', () => {
-  const host = server.address().address;
-  const port = server.address().port;
-  console.log('Web server started at http://%s:%s', host, port);
+const PORT = parseInt(process.env.PORT);
+const HOST = process.env.HOST;
+app.listen(PORT, HOST, () => {
+  console.log('Web server started at http://%s:%s', HOST, PORT);
 });
 
 export function web(bot: any): void {
