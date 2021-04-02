@@ -35,7 +35,14 @@ Currently, you can't edit or delete events. If you are a developer, Pull Request
 1. Clone this repository. 
 2. In order to be able to send and receive message via Telegram you first need to create a bot: [Create a bot with botfather](https://core.telegram.org/bots#3-how-do-i-create-a-bot). There you get a token.
 3. In the terminal, go to the app's folder with `cd createEventsBot`.
-4. Create a database by running `yarn install` and then `npx sqlite3 ./data/development.db`.
+4. Create a database by running `yarn install`, `mkdir data` and `npx sqlite3 ./data/development.db`.
+5. Create the database-tables by running the following three commands:
+```
+sqlite3 ./data/development.db
+> CREATE TABLE "events" ("id" INTEGER NOT NULL UNIQUE,"chat_id" INTEGER NOT NULL,"message_id" INTEGER NOT NULL,"description" TEXT NOT NULL,PRIMARY KEY("id" AUTOINCREMENT));
+> CREATE TABLE "attendees" ("id" INTEGER NOT NULL UNIQUE,"event_id" INTEGER NOT NULL,"user_id" INTEGER NOT NULL,"name" TEXT NOT NULL,FOREIGN KEY("event_id") REFERENCES "events"("id"),PRIMARY KEY("id" AUTOINCREMENT));
+```
+
 3. Rename the file `.env_example` to `.env` and set `DEV_BOT_TOKEN` to the token, you've got from BotFather. 
 4. Then run `yarn watch`.
 
@@ -50,6 +57,10 @@ You might find it useful to create two different bots, one for local development
 For deployment I found [uberspace](https://uberspace.de/) really nice.
 
 Also, feel free to make a Pull Request here with your changes if they might be useful to integrate into the CreateEventsBot!
+
+### Any Questions?
+
+Feel free to send me a message if anything doesn't work.
 
 ### Used technology & acknowledgements
 
