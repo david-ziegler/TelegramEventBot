@@ -6,11 +6,11 @@ import packageInfo from '../../package.json';
 
 const app = express();
 const ENV_PORT = process.env.PORT;
-if (ENV_PORT === undefined) {
-  throw new Error('Environment variable "PORT" is not set.');
+const HOST = process.env.HOST;
+if (ENV_PORT === undefined || HOST === undefined) {
+  throw new Error(`Environment variable "PORT" or "HOST" is not set.`);
 }
 const PORT = parseInt(ENV_PORT);
-const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`Web server started at http://${HOST}:${PORT}`);
 });
