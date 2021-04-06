@@ -32,7 +32,7 @@ export function getEventTextWithAttendees(description: string, attendees: Attend
 }
 
 export function sanitize(original: string): string {
-  const RESERVED_CHARACTERS = ['.', '(', ')', '{', '}'];
+  const RESERVED_CHARACTERS = ['.', '(', ')', '{', '}', '!', '#', '+', '-', '=', '>', '|'];
   const MARKDOWN_CHARACTERS = ['_', '*', '__', '~', '`', '```', '[', ']'];
   if (original === '') {
     return '';
