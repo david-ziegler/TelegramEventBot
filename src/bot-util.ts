@@ -32,8 +32,8 @@ export function getEventTextWithAttendees(description: string, attendees: Attend
 }
 
 export function sanitize(original: string): string {
-  const RESERVED_CHARACTERS = ['.'];
-  const MARKDOWN_CHARACTERS = ['_', '*', '__', '~', '`', '```'];
+  const RESERVED_CHARACTERS = ['.', '(', ')', '{', '}'];
+  const MARKDOWN_CHARACTERS = ['_', '*', '__', '~', '`', '```', '[', ']'];
   if (original === '') {
     return '';
   }
@@ -48,16 +48,21 @@ export function sanitize(original: string): string {
 }
 
 function escapeReservedCharacters(original: string, reservedCharacter: string): string {
-  const RESERVED_CHARACTER_REGEX = new RegExp(`\\${reservedCharacter}`, 'g');
-  return original.replace(RESERVED_CHARACTER_REGEX, `\\${reservedCharacter}`);
+  const REGEX = new RegExp(`\\${reservedCharacter}`, 'g');
+  return original.replace(REGEX, `\\${reservedCharacter}`);
 }
 
-function escapeIfOddNumberOfThisCharacter(original: string, unwantedCharacter: string) {
-  // make sure the string doesn't contain an uneven number of "_"
+function allCharactersEscaped(original: string): string {
+  return original.split('').map((char: string) => `\\${char}`).join('');
+}
+
+function escapeIfOddNumberOfThisCharacter(original: string, markdownCharacters: string) {
+  // make sure the string doesn't contain an uneven number of the markdown characters
   // An even number can be correctly parsed as markdown
-  if (isOdd(numberOfOccurrences(original, unwantedCharacter))) {
-    const UNWANTED_CHARACTER_REGEX = new RegExp(`\\${unwantedCharacter}`, 'g');
-    return original.replace(UNWANTED_CHARACTER_REGEX, `\\${unwantedCharacter}`);
+  if (isOdd(numberOfOccurrences(original, markdownCharacters))) {
+    const REGEX = new RegExp(`\\${markdownCharacters}`, 'g');
+    const replacement = allCharactersEscaped(markdownCharacters);
+    return original.replace(REGEX, replacement);
   }
 
   return original;
