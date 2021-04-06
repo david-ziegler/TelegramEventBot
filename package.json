@@ -1,6 +1,6 @@
 {
   "name": "create-events-bot",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Create events in Telegram groups",
   "main": "index.js",
   "scripts": {
