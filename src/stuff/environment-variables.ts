@@ -1,7 +1,3 @@
-export function pretty(object: unknown): string {
-  return JSON.stringify(object, null, 2);
-}
-
 const { DATABASE_PATH, PORT, HOST } = process.env;
 if (DATABASE_PATH === undefined) {
   throw new Error('Environment variable "DATABASE_PATH" is not set."');

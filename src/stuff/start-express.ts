@@ -3,7 +3,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import packageInfo from '../../package.json';
-import { ENV } from './helper';
+import { ENV } from './environment-variables';
 
 const app = express();
 const PORT = parseInt(ENV.PORT);

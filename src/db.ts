@@ -2,7 +2,7 @@ import { Database } from 'sqlite3';
 import { sanitize } from './bot-util';
 import { Attendee, Event } from './models';
 import { all, get, run } from './stuff/db-helper';
-import { ENV } from './stuff/helper';
+import { ENV } from './stuff/environment-variables';
 
 const DESCRIPTION_MAX_LENGTH = 4500;
 
