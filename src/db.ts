@@ -1,5 +1,4 @@
 import { Database } from 'sqlite3';
-import { sanitize } from './bot-util';
 import { Attendee, Event } from './models';
 import { all, get, run } from './stuff/db-helper';
 import { ENV } from './stuff/environment-variables';
@@ -30,8 +29,7 @@ export class DB {
   }
 
   public async rsvpToEvent(event_id: number, user_id: number, name: string): Promise<void> {
-    const sanitized_full_name = sanitize(name);
-    await run(this.db, 'INSERT INTO attendees (event_id, user_id, name) VALUES (?, ?, ?)', [event_id, user_id, sanitized_full_name]);
+    await run(this.db, 'INSERT INTO attendees (event_id, user_id, name) VALUES (?, ?, ?)', [event_id, user_id, name]);
   }
 
   public async removeRsvpFromEvent(event_id: number, user_id: number): Promise<void> {

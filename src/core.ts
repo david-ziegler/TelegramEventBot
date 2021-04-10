@@ -1,8 +1,20 @@
-import TelegramBot, { Message, User } from 'node-telegram-bot-api';
-import { i18n } from './i18n';
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Message, User } from 'node-telegram-bot-api';
 import { Attendee } from './models';
 
-export function shortenDescriptionIfTooLong(description: string): string {
+export function createEventDescription(message: Message, i18n: any): string {
+  if (message.text === undefined || message.from === undefined) {
+    throw new Error(`Tried to create an event with an empty message-text. Message: ${message}`);
+  }
+  const event_description = removeBotCommand(message.text);
+  const event_description_valid_length = shortenDescriptionIfTooLong(event_description);
+  const event_description_with_author = addEventAuthor(event_description_valid_length, message.from, i18n);
+  const sanitized_event_description_with_author = sanitize(event_description_with_author);
+  return sanitized_event_description_with_author;
+}
+
+function shortenDescriptionIfTooLong(description: string): string {
   const MAX_LENGTH = 3500;
   if (description.length > MAX_LENGTH) {
     return description.substring(0, 3500) + '...';
@@ -11,24 +23,12 @@ export function shortenDescriptionIfTooLong(description: string): string {
   }
 }
 
-export function removeBotCommand(text: string): string {
+function removeBotCommand(text: string): string {
   return text.replace(/^\/(E|e)vent( |\n)?/, '');
 }
 
-export function addEventAuthor(text: string, author: User): string {
+function addEventAuthor(text: string, author: User, i18n: any): string {
   return `${text}\n\n_${i18n.message_content.created_by} ${getFullNameString(author)}_`;
-}
-
-export function createEventIDFromMessage(msg: Message): string {
-  return `${msg.chat.id}_${msg.message_id}`;
-}
-
-export function getEventTextWithAttendees(description: string, attendees: Attendee[]): string {
-  return `${description}\n\n*${i18n.message_content.rsvps}:*${attendees.reduce(
-    (attendeesString, attendeeRow) =>
-      `${attendeesString}\n${attendeeRow.name}`,
-    '',
-  )}`;
 }
 
 export function sanitize(original: string): string {
@@ -94,6 +94,14 @@ export function getFullNameString(user: User): string {
   return `${sanitize(user.first_name)} ${sanitize(user.last_name)}`;
 }
 
-export function deleteMessage(bot: TelegramBot, msg: Message): void {
-  bot.deleteMessage(msg.chat.id, msg.message_id.toString());
+export function createEventIDFromMessage(message: Message): string {
+  return `${message.chat.id}_${message.message_id}`;
+}
+
+export function getEventTextWithAttendees(description: string, attendees: Attendee[], attendees_label: string): string {
+  return `${description}\n\n*${attendees_label}:*${attendees.reduce(
+    (attendeesString, attendeeRow) =>
+      `${attendeesString}\n${attendeeRow.name}`,
+    '',
+  )}`;
 }

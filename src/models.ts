@@ -11,3 +11,8 @@ export interface Event {
   message_id: number;
   description: string;
 }
+
+export enum Action {
+  RSVP = 'RSVP',
+  CANCEL_RSVP = 'CANCEL_RSVP',
+}
