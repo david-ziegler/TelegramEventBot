@@ -10,7 +10,7 @@ export async function createEvent(message: Message, i18n: any, db: DB, bot: Tele
   const event_description = createEventDescription(message, i18n);
   deleteMessage(bot, message);
   const options: SendMessageOptions = {
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
     reply_markup: rsvpButtons(i18n.buttons.rsvp, i18n.buttons.cancel_rsvp).getMarkup(),
   };
   const created_message = await bot.sendMessage(message.chat.id, event_description, options);
@@ -72,7 +72,7 @@ export async function changeRSVPForUser(
     const options: EditMessageTextOptions = {
       chat_id: message.chat.id,
       message_id: message.message_id,
-      parse_mode: 'MarkdownV2',
+      parse_mode: 'HTML',
       reply_markup: rsvpButtons(i18n.buttons.rsvp, i18n.buttons.cancel_rsvp).getMarkup(),
     };
     bot.editMessageText(eventTextWithAttendees, options);
