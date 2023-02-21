@@ -12,9 +12,9 @@ This makes it possible to get much less notifications in large groups. Instead o
 1. Open the Telegram group in which you would like to enable events.
 2. Open group "Info" and click "Edit" to go to group settings.
 3. Click on "Administrators" and "Add Admin"
-4. Type "@create_events_bot" in the search and click on "CreateEventsBot".
+4. Type "@create_events_bot" in the search and choose the bot named "Event".
 5. Give the CreateEventsBot the right to "Delete Messages", everything else you can disable if you want.
-   The bot needs delete rights to work nicely since it deletes messages that start with "/event" and replaces them with the actual event. It will not delete anything else.
+   The bot needs delete rights to work nicely since it deletes messages that start with "/event" and replaces them with the actual event. It will not delete anything else. Actually, the bot can only read messages that start with `/`
 6. Click on "Done" to add the bot to the group. It might ask whether you want to first add the bot as a member to the group and then promote it to admin. In that case click yes.
 
 ## How to create an event
